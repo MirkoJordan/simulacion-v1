@@ -2,7 +2,7 @@
   "bots": {
     "bot_v1": {
       "name": "Bot V1 (Base - 3.0 años, depth 4)",
-      "balance": 120.0,
+      "balance": 110.0,
       "initial_balance": 120.0,
       "roi": 0.0,
       "win_rate": 0.0,
@@ -11,7 +11,7 @@
     },
     "bot_cand_a": {
       "name": "Bot A (Max ROI - 2.5 años, depth 4)",
-      "balance": 120.0,
+      "balance": 110.0,
       "initial_balance": 120.0,
       "roi": 0.0,
       "win_rate": 0.0,
@@ -20,7 +20,7 @@
     },
     "bot_cand_b": {
       "name": "Bot B (Max Acierto - 2.0 años, depth 3, tendencias)",
-      "balance": 120.0,
+      "balance": 110.0,
       "initial_balance": 120.0,
       "roi": 0.0,
       "win_rate": 0.0,
@@ -28,7 +28,75 @@
       "wins": 0
     }
   },
-  "active_bets": [],
+  "active_bets": [
+    {
+      "date": "2026-06-11",
+      "city": "Madrid",
+      "question": "Highest temperature in Madrid on June 11?",
+      "bets": [
+        {
+          "bot": "bot_v1",
+          "market_id": "2476949",
+          "option": "31°C",
+          "price": 0.05,
+          "invested": 5.0,
+          "prob_ia": 59.3,
+          "pred_ia_temp": 30.82,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_v1",
+          "market_id": "2476948",
+          "option": "30°C",
+          "price": 0.05,
+          "invested": 5.0,
+          "prob_ia": 27.9,
+          "pred_ia_temp": 30.82,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2476949",
+          "option": "31°C",
+          "price": 0.05,
+          "invested": 5.0,
+          "prob_ia": 56.6,
+          "pred_ia_temp": 30.73,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2476948",
+          "option": "30°C",
+          "price": 0.05,
+          "invested": 5.0,
+          "prob_ia": 32.9,
+          "pred_ia_temp": 30.73,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_b",
+          "market_id": "2476949",
+          "option": "31°C",
+          "price": 0.05,
+          "invested": 5.0,
+          "prob_ia": 56.9,
+          "pred_ia_temp": 30.76,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_b",
+          "market_id": "2476948",
+          "option": "30°C",
+          "price": 0.05,
+          "invested": 5.0,
+          "prob_ia": 31.2,
+          "pred_ia_temp": 30.76,
+          "result": "Pendiente"
+        }
+      ]
+    }
+  ],
   "history": [
     {
       "date": "2026-06-11",
