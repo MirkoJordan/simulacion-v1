@@ -1,0 +1,41 @@
+{
+  "bots": {
+    "bot_v1": {
+      "name": "Bot V1 (Base - 3.0 años, depth 4)",
+      "balance": 120.0,
+      "initial_balance": 120.0,
+      "roi": 0.0,
+      "win_rate": 0.0,
+      "trades_count": 0,
+      "wins": 0
+    },
+    "bot_cand_a": {
+      "name": "Bot A (Max ROI - 2.5 años, depth 4)",
+      "balance": 120.0,
+      "initial_balance": 120.0,
+      "roi": 0.0,
+      "win_rate": 0.0,
+      "trades_count": 0,
+      "wins": 0
+    },
+    "bot_cand_b": {
+      "name": "Bot B (Max Acierto - 2.0 años, depth 3, tendencias)",
+      "balance": 120.0,
+      "initial_balance": 120.0,
+      "roi": 0.0,
+      "win_rate": 0.0,
+      "trades_count": 0,
+      "wins": 0
+    }
+  },
+  "active_bets": [],
+  "history": [
+    {
+      "date": "2026-06-11",
+      "bot_v1_balance": 120.0,
+      "bot_cand_a_balance": 120.0,
+      "bot_cand_b_balance": 120.0
+    }
+  ],
+  "resolved_bets": []
+}

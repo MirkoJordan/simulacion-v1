@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Simulación: Polymarket Weather Bots</title>
+    <!-- Outfit Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <header class="app-header">
+        <div class="header-content">
+            <div class="title-area">
+                <i class="fa-solid fa-cloud-sun-rain app-logo"></i>
+                <div>
+                    <h1>Polymarket Weather Bots</h1>
+                    <p class="subtitle">Simulación en tiempo real a las 06:00 AM (3 Modelos en Paralelo)</p>
+                </div>
+            </div>
+            <div class="update-badge" id="update-badge">
+                <i class="fa-solid fa-clock-rotate-left"></i> Actualizado: Cargando...
+            </div>
+        </div>
+    </header>
+
+    <main class="dashboard-container">
+        
+        <!-- Summary Cards Section -->
+        <section class="bot-cards-grid">
+            
+            <!-- Bot 1 Card -->
+            <div class="bot-card" id="card-bot-v1">
+                <div class="card-glow"></div>
+                <div class="bot-header">
+                    <span class="bot-tag tag-v1">Original</span>
+                    <h3>Bot V1</h3>
+                    <p class="model-desc">3.0 Años | Max Depth 4</p>
+                </div>
+                <div class="metric-row">
+                    <div class="metric">
+                        <span class="label">Balance</span>
+                        <span class="value" id="balance-v1">$120.00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">ROI</span>
+                        <span class="value" id="roi-v1">0.0%</span>
+                    </div>
+                </div>
+                <div class="metric-footer">
+                    <span class="sub-stat"><i class="fa-solid fa-circle-check"></i> Acierto: <strong id="accuracy-v1">0%</strong></span>
+                    <span class="sub-stat"><i class="fa-solid fa-receipt"></i> Operaciones: <strong id="ops-v1">0</strong></span>
+                </div>
+            </div>
+
+            <!-- Bot 2 Card (A) -->
+            <div class="bot-card" id="card-bot-a">
+                <div class="card-glow glow-a"></div>
+                <div class="bot-header">
+                    <span class="bot-tag tag-a">Máx ROI</span>
+                    <h3>Bot A</h3>
+                    <p class="model-desc">2.5 Años | Max Depth 4</p>
+                </div>
+                <div class="metric-row">
+                    <div class="metric">
+                        <span class="label">Balance</span>
+                        <span class="value" id="balance-a">$120.00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">ROI</span>
+                        <span class="value" id="roi-a">0.0%</span>
+                    </div>
+                </div>
+                <div class="metric-footer">
+                    <span class="sub-stat"><i class="fa-solid fa-circle-check"></i> Acierto: <strong id="accuracy-a">0%</strong></span>
+                    <span class="sub-stat"><i class="fa-solid fa-receipt"></i> Operaciones: <strong id="ops-a">0</strong></span>
+                </div>
+            </div>
+
+            <!-- Bot 3 Card (B) -->
+            <div class="bot-card" id="card-bot-b">
+                <div class="card-glow glow-b"></div>
+                <div class="bot-header">
+                    <span class="bot-tag tag-b">Máx Acierto</span>
+                    <h3>Bot B</h3>
+                    <p class="model-desc">2.0 Años | Max Depth 3 | Con Tendencias</p>
+                </div>
+                <div class="metric-row">
+                    <div class="metric">
+                        <span class="label">Balance</span>
+                        <span class="value" id="balance-b">$120.00</span>
+                    </div>
+                    <div class="metric">
+                        <span class="label">ROI</span>
+                        <span class="value" id="roi-b">0.0%</span>
+                    </div>
+                </div>
+                <div class="metric-footer">
+                    <span class="sub-stat"><i class="fa-solid fa-circle-check"></i> Acierto: <strong id="accuracy-b">0%</strong></span>
+                    <span class="sub-stat"><i class="fa-solid fa-receipt"></i> Operaciones: <strong id="ops-b">0</strong></span>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Chart Section -->
+        <section class="chart-card">
+            <h2><i class="fa-solid fa-chart-line"></i> Curva de Capital (Simulación)</h2>
+            <div class="chart-wrapper">
+                <canvas id="capital-chart"></canvas>
+            </div>
+        </section>
+
+        <div class="grid-split">
+            <!-- Active Bets -->
+            <section class="table-card">
+                <h2><i class="fa-solid fa-fire-flame-simple"></i> Apuestas Activas de Hoy</h2>
+                <div class="bets-list" id="active-bets-container">
+                    <p class="empty-msg">No hay apuestas activas para hoy o esperando resolución.</p>
+                </div>
+            </section>
+
+            <!-- Resolved History -->
+            <section class="table-card">
+                <h2><i class="fa-solid fa-history"></i> Historial de Apuestas Resueltas</h2>
+                <div class="resolved-wrapper">
+                    <table class="premium-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Ciudad</th>
+                                <th>Ganador Real</th>
+                                <th>Detalles Compras</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resolved-bets-tbody">
+                            <tr>
+                                <td colspan="4" class="empty-msg">No hay apuestas resueltas todavía.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <footer class="app-footer">
+        <p>Creado en exclusiva para Polymarket Weather Strategy | 100% Datos de Mercado Reales vía Polymarket & Open-Meteo APIs</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
