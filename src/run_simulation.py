@@ -131,9 +131,9 @@ def build_dataset(city_name, config):
 
 # ----------------- TRAINING AND PREDICTION -----------------
 
-def get_trained_models_for_city(df_all):
-    # Train end strictly before May 1, 2026
-    train_end = pd.to_datetime('2026-05-01')
+def get_trained_models_for_city(df_all, target_date):
+    # Train end dynamically 10 days before target_date
+    train_end = target_date - pd.Timedelta(days=10)
     
     # Base features (for V1 and Candidate A)
     base_features = [
@@ -349,7 +349,8 @@ def main():
         # Build dataset and train models
         try:
             df_all = build_dataset(city, config)
-            models = get_trained_models_for_city(df_all)
+            target_date_dt = pd.to_datetime(today.date())
+            models = get_trained_models_for_city(df_all, target_date_dt)
         except Exception as e:
             print(f"   Error al entrenar modelos / descargar datos para {city}: {e}")
             continue
