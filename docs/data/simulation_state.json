@@ -2,7 +2,7 @@
   "bots": {
     "bot_v1": {
       "name": "Bot V1 (Base - 3.0 años, depth 4)",
-      "balance": 120.0,
+      "balance": 110.0,
       "initial_balance": 120.0,
       "roi": 0.0,
       "win_rate": 0.0,
@@ -11,7 +11,7 @@
     },
     "bot_cand_a": {
       "name": "Bot A (Max ROI - 2.5 años, depth 4)",
-      "balance": 120.0,
+      "balance": 110.0,
       "initial_balance": 120.0,
       "roi": 0.0,
       "win_rate": 0.0,
@@ -20,7 +20,7 @@
     },
     "bot_cand_b": {
       "name": "Bot B (Max Acierto - 2.0 años, depth 3, tendencias)",
-      "balance": 120.0,
+      "balance": 110.0,
       "initial_balance": 120.0,
       "roi": 0.0,
       "win_rate": 0.0,
@@ -28,7 +28,76 @@
       "wins": 0
     }
   },
-  "active_bets": [],
-  "history": [],
+  "active_bets": [
+    {
+      "date": "2026-06-12",
+      "city": "Madrid",
+      "question": "Highest temperature in Madrid on June 12?",
+      "bets": [
+        {
+          "bot": "bot_v1",
+          "market_id": "2488611",
+          "option": "35°C",
+          "price": 0.05,
+          "invested": 10.0,
+          "prob_ia": 47.9,
+          "pred_ia_temp": 34.54,
+          "pred_sat_temp": 33.2,
+          "ia_bias_correction": 1.1,
+          "clem_correction": 0.24,
+          "sigma": 0.58,
+          "validation_mae_9d": 0.4,
+          "validation_acc_9d": 80.0,
+          "validation_mae_10d": 0.4,
+          "validation_acc_10d": 80.0,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2488611",
+          "option": "35°C",
+          "price": 0.05,
+          "invested": 10.0,
+          "prob_ia": 49.3,
+          "pred_ia_temp": 34.57,
+          "pred_sat_temp": 33.2,
+          "ia_bias_correction": 1.13,
+          "clem_correction": 0.24,
+          "sigma": 0.58,
+          "validation_mae_9d": 0.38,
+          "validation_acc_9d": 70.0,
+          "validation_mae_10d": 0.38,
+          "validation_acc_10d": 70.0,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_b",
+          "market_id": "2488611",
+          "option": "35°C",
+          "price": 0.05,
+          "invested": 10.0,
+          "prob_ia": 47.9,
+          "pred_ia_temp": 34.54,
+          "pred_sat_temp": 33.2,
+          "ia_bias_correction": 1.1,
+          "clem_correction": 0.24,
+          "sigma": 0.58,
+          "validation_mae_9d": 0.36,
+          "validation_acc_9d": 80.0,
+          "validation_mae_10d": 0.36,
+          "validation_acc_10d": 80.0,
+          "result": "Pendiente"
+        }
+      ]
+    }
+  ],
+  "history": [
+    {
+      "date": "2026-06-12",
+      "bot_v1_balance": 120.0,
+      "bot_cand_a_balance": 120.0,
+      "bot_cand_b_balance": 120.0
+    }
+  ],
   "resolved_bets": []
 }
