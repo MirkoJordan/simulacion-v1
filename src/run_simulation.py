@@ -34,7 +34,7 @@ MAX_OPTS = 2
 # ----------------- DATA DOWNLOAD HELPERS -----------------
 
 def download_ground_truth_iem(station_id, past_days, tz):
-    end = datetime.now()
+    end = datetime.now() + timedelta(days=1)
     start = datetime.now() - pd.Timedelta(days=past_days + 30)
     url = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
     params = {
@@ -67,23 +67,58 @@ def download_ground_truth_iem(station_id, past_days, tz):
     return df_daily.ffill().bfill()
 
 def download_forecasts(lat, lon, past_days, tz):
-    url = "https://previous-runs-api.open-meteo.com/v1/forecast"
-    params = {
+    # 1. Descargar pronósticos históricos (desde previous-runs-api)
+    url_hist = "https://previous-runs-api.open-meteo.com/v1/forecast"
+    params_hist = {
         "latitude": lat, "longitude": lon, "past_days": past_days + 15,
         "hourly": ["temperature_2m", "relative_humidity_2m", "cloud_cover", "surface_pressure", "wind_speed_10m", "wind_direction_10m"],
         "timezone": tz
     }
-    r = requests.get(url, params=params)
-    data = r.json()
-    df_hourly = pd.DataFrame({
-        "Fecha_Hora": pd.to_datetime(data["hourly"]["time"]),
-        "Temp_Predicha": data["hourly"]["temperature_2m"],
-        "Humidity_Predicha": data["hourly"]["relative_humidity_2m"],
-        "Cloud_Predicha": data["hourly"]["cloud_cover"],
-        "Pressure_Predicha": data["hourly"]["surface_pressure"],
-        "Wind_Speed_Predicha": data["hourly"]["wind_speed_10m"],
-        "Wind_Dir_Predicha": data["hourly"]["wind_direction_10m"]
-    })
+    try:
+        r_hist = requests.get(url_hist, params=params_hist).json()
+        df_hourly_hist = pd.DataFrame({
+            "Fecha_Hora": pd.to_datetime(r_hist["hourly"]["time"]),
+            "Temp_Predicha": r_hist["hourly"]["temperature_2m"],
+            "Humidity_Predicha": r_hist["hourly"]["relative_humidity_2m"],
+            "Cloud_Predicha": r_hist["hourly"]["cloud_cover"],
+            "Pressure_Predicha": r_hist["hourly"]["surface_pressure"],
+            "Wind_Speed_Predicha": r_hist["hourly"]["wind_speed_10m"],
+            "Wind_Dir_Predicha": r_hist["hourly"]["wind_direction_10m"]
+        })
+    except Exception as e:
+        print(f"   [Aviso Forecast] Error al descargar pronósticos históricos: {e}")
+        df_hourly_hist = pd.DataFrame()
+        
+    # 2. Descargar pronóstico en vivo para hoy y los próximos días (desde la API estándar)
+    url_live = "https://api.open-meteo.com/v1/forecast"
+    params_live = {
+        "latitude": lat, "longitude": lon, "forecast_days": 3,
+        "hourly": ["temperature_2m", "relative_humidity_2m", "cloud_cover", "surface_pressure", "wind_speed_10m", "wind_direction_10m"],
+        "timezone": tz
+    }
+    try:
+        r_live = requests.get(url_live, params=params_live).json()
+        df_hourly_live = pd.DataFrame({
+            "Fecha_Hora": pd.to_datetime(r_live["hourly"]["time"]),
+            "Temp_Predicha": r_live["hourly"]["temperature_2m"],
+            "Humidity_Predicha": r_live["hourly"]["relative_humidity_2m"],
+            "Cloud_Predicha": r_live["hourly"]["cloud_cover"],
+            "Pressure_Predicha": r_live["hourly"]["surface_pressure"],
+            "Wind_Speed_Predicha": r_live["hourly"]["wind_speed_10m"],
+            "Wind_Dir_Predicha": r_live["hourly"]["wind_direction_10m"]
+        })
+    except Exception as e:
+        print(f"   [Aviso Forecast] Error al descargar pronósticos en vivo: {e}")
+        df_hourly_live = pd.DataFrame()
+        
+    # 3. Concatenar y eliminar duplicados (dando prioridad al pronóstico en vivo)
+    if not df_hourly_hist.empty and not df_hourly_live.empty:
+        df_hourly = pd.concat([df_hourly_hist, df_hourly_live]).drop_duplicates(subset=["Fecha_Hora"], keep="last")
+    elif not df_hourly_hist.empty:
+        df_hourly = df_hourly_hist
+    else:
+        df_hourly = df_hourly_live
+        
     df_hourly["Fecha"] = df_hourly["Fecha_Hora"].dt.date
     df_daily = df_hourly.groupby("Fecha").agg(
         Temp_Max_Predicha=("Temp_Predicha", "max"),
@@ -147,12 +182,29 @@ def get_trained_models_for_city(df_all, target_date):
     # Trend features (for Candidate B)
     trend_features = base_features + ["Error_Delta", "Pressure_Trend_Predicha", "Temp_Spread_Predicha", "Temp_Trend_Predicha"]
     
+    # Validation set (10 days gap: target_date - 10 to target_date - 1)
+    val_start = target_date - pd.Timedelta(days=10)
+    val_end = target_date - pd.Timedelta(days=1)
+    df_val = df_all[(df_all["Fecha"] >= val_start) & (df_all["Fecha"] <= val_end)].copy()
+    
+    val_mae_v1 = None
+    val_acc_v1 = None
+    val_mae_a = None
+    val_acc_a = None
+    val_mae_b = None
+    val_acc_b = None
+    
     # 1. Train Bot V1 (Base - 3.0 years, max_depth=4, no trends)
     df_v1 = df_all[df_all["Fecha"] < train_end].copy()
     model_v1 = xgb.XGBRegressor(n_estimators=100, max_depth=4, learning_rate=0.04, subsample=0.8, colsample_bytree=0.8, reg_alpha=0.1, reg_lambda=1.0, random_state=42)
     model_v1.fit(df_v1[base_features], df_v1["Error_Base"])
     pred_v1_train = df_v1["Temp_Max_Predicha"] + model_v1.predict(df_v1[base_features])
     sigma_v1 = (df_v1["Temp_Max_Real"] - pred_v1_train).std()
+    if not df_val.empty:
+        pred_v1_val = df_val["Temp_Max_Predicha"] + model_v1.predict(df_val[base_features])
+        val_mae_v1 = float((df_val["Temp_Max_Real"] - pred_v1_val).abs().mean())
+        hits_v1 = int((pred_v1_val.round().astype(int) == df_val["Temp_Max_Real"].round().astype(int)).sum())
+        val_acc_v1 = float(hits_v1 / len(df_val) * 100)
     
     # 2. Train Bot Candidate A (Max ROI - 2.5 years/912 days, max_depth=4, no trends)
     train_start_a = train_end - pd.Timedelta(days=912)
@@ -161,6 +213,11 @@ def get_trained_models_for_city(df_all, target_date):
     model_a.fit(df_a[base_features], df_a["Error_Base"])
     pred_a_train = df_a["Temp_Max_Predicha"] + model_a.predict(df_a[base_features])
     sigma_a = (df_a["Temp_Max_Real"] - pred_a_train).std()
+    if not df_val.empty:
+        pred_a_val = df_val["Temp_Max_Predicha"] + model_a.predict(df_val[base_features])
+        val_mae_a = float((df_val["Temp_Max_Real"] - pred_a_val).abs().mean())
+        hits_a = int((pred_a_val.round().astype(int) == df_val["Temp_Max_Real"].round().astype(int)).sum())
+        val_acc_a = float(hits_a / len(df_val) * 100)
     
     # 3. Train Bot Candidate B (Max Accuracy - 2.0 years/730 days, max_depth=3, with trends)
     train_start_b = train_end - pd.Timedelta(days=730)
@@ -169,12 +226,76 @@ def get_trained_models_for_city(df_all, target_date):
     model_b.fit(df_b[trend_features], df_b["Error_Base"])
     pred_b_train = df_b["Temp_Max_Predicha"] + model_b.predict(df_b[trend_features])
     sigma_b = (df_b["Temp_Max_Real"] - pred_b_train).std()
+    if not df_val.empty:
+        pred_b_val = df_val["Temp_Max_Predicha"] + model_b.predict(df_val[trend_features])
+        val_mae_b = float((df_val["Temp_Max_Real"] - pred_b_val).abs().mean())
+        hits_b = int((pred_b_val.round().astype(int) == df_val["Temp_Max_Real"].round().astype(int)).sum())
+        val_acc_b = float(hits_b / len(df_val) * 100)
     
     return {
-        "bot_v1": {"model": model_v1, "features": base_features, "sigma": sigma_v1},
-        "bot_cand_a": {"model": model_a, "features": base_features, "sigma": sigma_a},
-        "bot_cand_b": {"model": model_b, "features": trend_features, "sigma": sigma_b}
+        "bot_v1": {"model": model_v1, "features": base_features, "sigma": sigma_v1, "val_mae": val_mae_v1, "val_acc": val_acc_v1},
+        "bot_cand_a": {"model": model_a, "features": base_features, "sigma": sigma_a, "val_mae": val_mae_a, "val_acc": val_acc_a},
+        "bot_cand_b": {"model": model_b, "features": trend_features, "sigma": sigma_b, "val_mae": val_mae_b, "val_acc": val_acc_b}
     }
+
+def get_clem_correction(city_name, config, target_date):
+    print(f"   [+] Intentando calcular corrección CLEM para {city_name}...")
+    try:
+        # 1. actual 11h local time
+        end = target_date + pd.Timedelta(days=1)
+        start = target_date - pd.Timedelta(days=1)
+        url = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
+        params = {
+            "station": config["station_id"],
+            "data": "tmpc",
+            "year1": str(start.year), "month1": str(start.month), "day1": str(start.day),
+            "year2": str(end.year), "month2": str(end.month), "day2": str(end.day),
+            "tz": config["timezone"],
+            "format": "onlydata"
+        }
+        r = requests.get(url, params=params)
+        lines = [line.split(",") for line in r.text.strip().split("\n") if not line.startswith("#") and "," in line]
+        df = pd.DataFrame(lines[1:], columns=lines[0])
+        df["tmpc"] = pd.to_numeric(df["tmpc"], errors="coerce")
+        df["valid"] = pd.to_datetime(df["valid"])
+        df["Hora"] = df["valid"].dt.hour
+        df["Fecha"] = df["valid"].dt.date
+        
+        target_date_only = target_date.date()
+        df_target = df[(df["Fecha"] == target_date_only) & (df["Hora"] == 11)]
+        if df_target.empty:
+            print(f"   [CLEM] No se encontraron lecturas a las 11:00 AM reales.")
+            return 0.0
+        temp_11h_real = df_target["tmpc"].mean()
+        
+        # 2. forecast 11h local time
+        url_f = "https://previous-runs-api.open-meteo.com/v1/forecast"
+        params_f = {
+            "latitude": config["lat"], "longitude": config["lon"], "past_days": 5,
+            "hourly": ["temperature_2m"],
+            "timezone": config["timezone"]
+        }
+        rf = requests.get(url_f, params=params_f).json()
+        df_f = pd.DataFrame({
+            "Fecha_Hora": pd.to_datetime(rf["hourly"]["time"]),
+            "Temp_Predicha": rf["hourly"]["temperature_2m"]
+        })
+        df_f["Hora"] = df_f["Fecha_Hora"].dt.hour
+        df_f["Fecha"] = df_f["Fecha_Hora"].dt.date
+        
+        df_f_target = df_f[(df_f["Fecha"] == target_date_only) & (df_f["Hora"] == 11)]
+        if df_f_target.empty:
+            print(f"   [CLEM] No se encontraron lecturas predichas a las 11:00 AM.")
+            return 0.0
+        temp_11h_pred = df_f_target["Temp_Predicha"].mean()
+        
+        error_11h = temp_11h_real - temp_11h_pred
+        correction = 0.40 * error_11h
+        print(f"   [CLEM SUCCESS] Temp 11h Real: {temp_11h_real:.1f}°C, Pred: {temp_11h_pred:.1f}°C, Error: {error_11h:+.1f}°C. Corrección (alpha=0.40): {correction:+.2f}°C")
+        return correction
+    except Exception as e:
+        print(f"   [CLEM ERROR] Error al calcular: {e}")
+        return 0.0
 
 def get_probability_from_distribution(col_name, pred_val, sigma):
     if "or below" in col_name:
@@ -192,6 +313,71 @@ def get_probability_from_distribution(col_name, pred_val, sigma):
             val = float(col_name.replace("°C", "").strip())
             return stats.norm.cdf(val + 0.5, loc=pred_val, scale=sigma) - stats.norm.cdf(val - 0.5, loc=pred_val, scale=sigma)
         except: return 0.0
+
+def verify_source_alignment(city_name, config, target_date, df_all, state, today_str):
+    print(f"   [+] Ejecutando auditoría de alineación para la ventana de validación de 10 días ({city_name})...")
+    try:
+        mismatches = []
+        for day_offset in range(1, 11):
+            check_date = target_date - pd.Timedelta(days=day_offset)
+            check_date_str = check_date.strftime("%Y-%m-%d")
+            
+            day_row = df_all[df_all["Fecha"] == check_date]
+            if day_row.empty:
+                continue
+            real_val = day_row["Temp_Max_Real"].values[0]
+            real_rounded = int(round(real_val))
+            
+            event = fetch_active_polymarket_event(config["city_slug"], check_date)
+            if not event:
+                continue
+                
+            resolved_winner = None
+            for m in event.get("markets", []):
+                outcome_prices = m.get("outcomePrices")
+                if outcome_prices:
+                    try:
+                        prices = json.loads(outcome_prices)
+                        if len(prices) >= 1 and float(prices[0]) > 0.95:
+                            resolved_winner = m.get("groupItemTitle")
+                            break
+                    except:
+                        pass
+                        
+            if resolved_winner:
+                clean_winner = resolved_winner.replace("°C", "").strip()
+                is_aligned = False
+                if "or below" in clean_winner:
+                    val = int(float(clean_winner.split("or")[0].strip()))
+                    is_aligned = (real_rounded <= val)
+                elif "or higher" in clean_winner:
+                    val = int(float(clean_winner.split("or")[0].strip()))
+                    is_aligned = (real_rounded >= val)
+                else:
+                    try:
+                        val = int(float(clean_winner))
+                        is_aligned = (real_rounded == val)
+                    except:
+                        pass
+                        
+                if not is_aligned:
+                    mismatches.append(f"{check_date_str} (ASOS {real_val}°C vs Polymarket '{resolved_winner}')")
+                    
+        if mismatches:
+            mismatch_str = ", ".join(mismatches)
+            print(f"   [ALERTA AUDITORÍA] Desalineación detectada en ventana de validación para {city_name}: {mismatch_str}")
+            if "audit_alerts" not in state:
+                state["audit_alerts"] = {}
+            state["audit_alerts"][city_name] = {
+                "date": today_str,
+                "message": f"Desalineación en validación de {city_name}: {mismatch_str}"
+            }
+        else:
+            print(f"   [OK AUDITORÍA] Todo alineado en la ventana de validación de 10 días para {city_name}.")
+            if "audit_alerts" in state and city_name in state["audit_alerts"]:
+                del state["audit_alerts"][city_name]
+    except Exception as e:
+        print(f"   [AUDITORÍA] Error al verificar alineación de fuentes: {e}")
 
 # ----------------- POLYMARKET API CLIENT -----------------
 
@@ -351,6 +537,7 @@ def main():
             df_all = build_dataset(city, config)
             target_date_dt = pd.to_datetime(today.date())
             models = get_trained_models_for_city(df_all, target_date_dt)
+            verify_source_alignment(city, config, target_date_dt, df_all, state, today_str)
         except Exception as e:
             print(f"   Error al entrenar modelos / descargar datos para {city}: {e}")
             continue
@@ -361,80 +548,259 @@ def main():
             # Fallback to the latest available day if today's forecast isn't fully updated yet
             today_row = df_all.iloc[-1:]
             
+        # Compute CLEM physical correction for this city (only if run around/after 12:00 PM when 11:00 AM ASOS data is available)
+        clem_corr = get_clem_correction(city, config, today)
+        
         # Place bets for each bot
+        # Check if we already have bets placed today for this city (running at 12:00 PM after running at 6:00 AM)
+        existing_group = None
+        for group in state.get("active_bets", []):
+            if group.get("date") == today_str and group.get("city") == city:
+                existing_group = group
+                break
+                
         bets_placed_today = []
         
-        for bot_id, bot_data in models.items():
-            model = bot_data["model"]
-            features = bot_data["features"]
-            sigma = bot_data["sigma"]
+        # If there's an existing group, we will construct updated_bets
+        if existing_group:
+            updated_bets = []
+            print(f"   [Intradía] Se detectaron apuestas previas para hoy en {city}. Verificando cambio de predicción...")
             
-            # Predict
-            pred_bias = model.predict(today_row[features])[0]
-            pred_ia = today_row["Temp_Max_Predicha"].values[0] + pred_bias
-            
-            bot_balance = state["bots"][bot_id]["balance"]
-            # Skip if bot runs out of money (protection)
-            if bot_balance <= 0:
-                print(f"   - {state['bots'][bot_id]['name']}: Banca a cero ($0). No puede operar.")
-                continue
+            for bot_id, bot_data in models.items():
+                model = bot_data["model"]
+                features = bot_data["features"]
+                sigma = bot_data["sigma"]
                 
-            choices = []
-            for m in markets:
-                prices_str = m.get("outcomePrices")
-                if not prices_str: continue
-                prices = json.loads(prices_str)
-                if len(prices) < 1: continue
+                # New prediction with CLEM
+                pred_bias = model.predict(today_row[features])[0]
+                pred_ia_base = today_row["Temp_Max_Predicha"].values[0] + pred_bias
+                pred_ia = pred_ia_base + clem_corr
                 
-                price = float(prices[0]) # YES Price
-                if price <= 0.05: price = 0.05
+                # Fetch old bets of this bot
+                old_bot_bets = [b for b in existing_group["bets"] if b["bot"] == bot_id]
                 
-                col_name = m.get("groupItemTitle")
-                prob = get_probability_from_distribution(col_name, pred_ia, sigma)
-                edge = prob - price
-                
-                if prob >= MIN_PROB and edge >= MIN_EDGE:
-                    choices.append({
-                        "market_id": m.get("id"),
-                        "option": col_name,
-                        "price": price,
-                        "edge": edge,
-                        "prob": prob
-                    })
+                # Calculate new choices
+                choices = []
+                for m in markets:
+                    prices_str = m.get("outcomePrices")
+                    if not prices_str: continue
+                    prices = json.loads(prices_str)
+                    if len(prices) < 1: continue
                     
-            # Select top 2 bets by Edge
-            choices = sorted(choices, key=lambda x: x["edge"], reverse=True)[:MAX_OPTS]
+                    price = float(prices[0])
+                    if price <= 0.05: price = 0.05
+                    col_name = m.get("groupItemTitle")
+                    prob = get_probability_from_distribution(col_name, pred_ia, sigma)
+                    edge = prob - price
+                    
+                    if prob >= MIN_PROB and edge >= MIN_EDGE:
+                        choices.append({
+                            "market_id": m.get("id"),
+                            "option": col_name,
+                            "price": price,
+                            "edge": edge,
+                            "prob": prob
+                        })
+                choices = sorted(choices, key=lambda x: x["edge"], reverse=True)[:MAX_OPTS]
+                
+                if not old_bot_bets:
+                    # If the bot didn't place bets earlier (e.g. balance was 0), try to place them now
+                    if choices:
+                        bot_balance = state["bots"][bot_id]["balance"]
+                        if bot_balance > 0:
+                            bet_amount = min(10.0, bot_balance)
+                            money_per_bet = bet_amount / len(choices)
+                            state["bots"][bot_id]["balance"] -= bet_amount
+                            for c in choices:
+                                updated_bets.append({
+                                    "bot": bot_id,
+                                    "market_id": c["market_id"],
+                                    "option": c["option"],
+                                    "price": c["price"],
+                                    "invested": round(money_per_bet, 2),
+                                    "prob_ia": round(c["prob"] * 100, 1),
+                                    "pred_ia_temp": round(pred_ia, 2),
+                                    "pred_sat_temp": round(float(today_row["Temp_Max_Predicha"].values[0]), 2),
+                                    "ia_bias_correction": round(float(pred_bias), 2),
+                                    "clem_correction": round(float(clem_corr), 2),
+                                    "sigma": round(float(sigma), 2),
+                                    "validation_mae_9d": round(float(bot_data["val_mae"]), 2) if bot_data["val_mae"] is not None else None,
+                                    "validation_acc_9d": round(float(bot_data["val_acc"]), 1) if bot_data["val_acc"] is not None else None,
+                                    "validation_mae_10d": round(float(bot_data["val_mae"]), 2) if bot_data["val_mae"] is not None else None,
+                                    "validation_acc_10d": round(float(bot_data["val_acc"]), 1) if bot_data["val_acc"] is not None else None,
+                                    "result": "Pendiente"
+                                })
+                                print(f"   - {state['bots'][bot_id]['name']}: Apostó ${money_per_bet:.2f} a '{c['option']}' (Primera operación del día al mediodía).")
+                    continue
+                
+                old_options = {b["option"] for b in old_bot_bets}
+                new_options = {c["option"] for c in choices}
+                
+                if old_options == new_options:
+                    # Maintain 6:00 AM bets (no changes)
+                    print(f"   - {state['bots'][bot_id]['name']}: Manteniendo apuestas de las 6:00 AM (Sin cambios en predicción: {old_options}).")
+                    # Update CLEM correction in metadata of existing bets for clarity
+                    for b in old_bot_bets:
+                        b["clem_correction"] = round(float(clem_corr), 2)
+                        b["pred_ia_temp"] = round(pred_ia, 2)
+                    updated_bets.extend(old_bot_bets)
+                else:
+                    # Sell old bets and reinvest!
+                    print(f"   - {state['bots'][bot_id]['name']}: ¡CAMBIO DE PREDICCIÓN DETECTADO! (6 AM: {old_options} -> 12 PM: {new_options})")
+                    for old_bet in old_bot_bets:
+                        # Find current price of this option in markets
+                        current_price = None
+                        for m in markets:
+                            if m.get("groupItemTitle") == old_bet["option"]:
+                                prices_str = m.get("outcomePrices")
+                                if prices_str:
+                                    prices = json.loads(prices_str)
+                                    if len(prices) >= 1:
+                                        current_price = float(prices[0])
+                                break
+                        if current_price is None or current_price <= 0.05:
+                            current_price = old_bet["price"] # Fallback if price missing
+                            
+                        # Refund calculation
+                        refund = old_bet["invested"] * (current_price / old_bet["price"])
+                        profit = refund - old_bet["invested"]
+                        
+                        state["bots"][bot_id]["balance"] += refund
+                        state["bots"][bot_id]["trades_count"] += 1
+                        if profit > 0:
+                            state["bots"][bot_id]["wins"] += 1
+                            
+                        # Log the sale in resolved_bets
+                        state["resolved_bets"].append({
+                            "date": today_str,
+                            "city": city,
+                            "question": existing_group.get("question"),
+                            "winner_option": f"Vendido Intradía ({old_bet['option']})",
+                            "bets": [{
+                                "bot": bot_id,
+                                "market_id": old_bet["market_id"],
+                                "option": old_bet["option"],
+                                "price": old_bet["price"],
+                                "invested": old_bet["invested"],
+                                "result": f"Vendido a ${current_price:.2f} (Retorno: ${refund:.2f} USD, Profit: {profit:+.2f} USD)"
+                            }]
+                        })
+                        print(f"      [Venta] Vendió '{old_bet['option']}' a ${current_price:.2f} (Precio compra: ${old_bet['price']:.2f}, Invertido: ${old_bet['invested']:.2f} -> Retornado: ${refund:.2f} USD, Net: {profit:+.2f} USD)")
+                        
+                    # Recalculate ROI and Win Rate
+                    bot_ref = state["bots"][bot_id]
+                    initial = bot_ref["initial_balance"]
+                    current = bot_ref["balance"]
+                    bot_ref["roi"] = round(((current - initial) / initial) * 100, 2)
+                    bot_ref["win_rate"] = round((bot_ref["wins"] / bot_ref["trades_count"]) * 100, 2) if bot_ref["trades_count"] > 0 else 0.0
+                    
+                    # Reinvest using new optimal options
+                    if choices:
+                        bot_balance = state["bots"][bot_id]["balance"]
+                        bet_amount = min(10.0, bot_balance)
+                        money_per_bet = bet_amount / len(choices)
+                        state["bots"][bot_id]["balance"] -= bet_amount
+                        
+                        for c in choices:
+                            updated_bets.append({
+                                "bot": bot_id,
+                                "market_id": c["market_id"],
+                                "option": c["option"],
+                                "price": c["price"],
+                                "invested": round(money_per_bet, 2),
+                                "prob_ia": round(c["prob"] * 100, 1),
+                                "pred_ia_temp": round(pred_ia, 2),
+                                "pred_sat_temp": round(float(today_row["Temp_Max_Predicha"].values[0]), 2),
+                                "ia_bias_correction": round(float(pred_bias), 2),
+                                "clem_correction": round(float(clem_corr), 2),
+                                "sigma": round(float(sigma), 2),
+                                "validation_mae_9d": round(float(bot_data["val_mae"]), 2) if bot_data["val_mae"] is not None else None,
+                                "validation_acc_9d": round(float(bot_data["val_acc"]), 1) if bot_data["val_acc"] is not None else None,
+                                "validation_mae_10d": round(float(bot_data["val_mae"]), 2) if bot_data["val_mae"] is not None else None,
+                                "validation_acc_10d": round(float(bot_data["val_acc"]), 1) if bot_data["val_acc"] is not None else None,
+                                "result": "Pendiente"
+                            })
+                        print(f"      [Recompra] Reinvirtió ${bet_amount:.2f} en nuevas opciones: {new_options}")
+                        
+            # Update existing group
+            existing_group["bets"] = updated_bets
             
-            if choices:
-                # Allocation: $10 total or remaining balance if below $10
-                bet_amount = min(10.0, bot_balance)
-                money_per_bet = bet_amount / len(choices)
+        else:
+            # First execution of the day (no bets placed yet today, e.g. at 6:00 AM)
+            for bot_id, bot_data in models.items():
+                model = bot_data["model"]
+                features = bot_data["features"]
+                sigma = bot_data["sigma"]
                 
-                # Deduct balance
-                state["bots"][bot_id]["balance"] -= bet_amount
+                # Predict
+                pred_bias = model.predict(today_row[features])[0]
+                pred_ia_base = today_row["Temp_Max_Predicha"].values[0] + pred_bias
+                pred_ia = pred_ia_base + clem_corr
                 
-                for c in choices:
-                    bets_placed_today.append({
-                        "bot": bot_id,
-                        "market_id": c["market_id"],
-                        "option": c["option"],
-                        "price": c["price"],
-                        "invested": round(money_per_bet, 2),
-                        "prob_ia": round(c["prob"] * 100, 1),
-                        "pred_ia_temp": round(pred_ia, 2),
-                        "result": "Pendiente"
-                    })
-                    print(f"   - {state['bots'][bot_id]['name']}: Apostó ${money_per_bet:.2f} a '{c['option']}' (Precio: ${c['price']:.2f}, IA: {c['prob']*100:.1f}%, Pred: {pred_ia:.2f}°C)")
-            else:
-                print(f"   - {state['bots'][bot_id]['name']}: Sin operaciones (No se encontró edge o probabilidad mínima).")
+                bot_balance = state["bots"][bot_id]["balance"]
+                if bot_balance <= 0:
+                    print(f"   - {state['bots'][bot_id]['name']}: Banca a cero ($0). No puede operar.")
+                    continue
+                    
+                choices = []
+                for m in markets:
+                    prices_str = m.get("outcomePrices")
+                    if not prices_str: continue
+                    prices = json.loads(prices_str)
+                    if len(prices) < 1: continue
+                    
+                    price = float(prices[0])
+                    if price <= 0.05: price = 0.05
+                    
+                    col_name = m.get("groupItemTitle")
+                    prob = get_probability_from_distribution(col_name, pred_ia, sigma)
+                    edge = prob - price
+                    
+                    if prob >= MIN_PROB and edge >= MIN_EDGE:
+                        choices.append({
+                            "market_id": m.get("id"),
+                            "option": col_name,
+                            "price": price,
+                            "edge": edge,
+                            "prob": prob
+                        })
+                        
+                choices = sorted(choices, key=lambda x: x["edge"], reverse=True)[:MAX_OPTS]
                 
-        if bets_placed_today:
-            state["active_bets"].append({
-                "date": today_str,
-                "city": city,
-                "question": event.get("title"),
-                "bets": bets_placed_today
-            })
+                if choices:
+                    bet_amount = min(10.0, bot_balance)
+                    money_per_bet = bet_amount / len(choices)
+                    state["bots"][bot_id]["balance"] -= bet_amount
+                    
+                    for c in choices:
+                        bets_placed_today.append({
+                            "bot": bot_id,
+                            "market_id": c["market_id"],
+                            "option": c["option"],
+                            "price": c["price"],
+                            "invested": round(money_per_bet, 2),
+                            "prob_ia": round(c["prob"] * 100, 1),
+                            "pred_ia_temp": round(pred_ia, 2),
+                            "pred_sat_temp": round(float(today_row["Temp_Max_Predicha"].values[0]), 2),
+                            "ia_bias_correction": round(float(pred_bias), 2),
+                            "clem_correction": round(float(clem_corr), 2),
+                            "sigma": round(float(sigma), 2),
+                            "validation_mae_9d": round(float(bot_data["val_mae"]), 2) if bot_data["val_mae"] is not None else None,
+                            "validation_acc_9d": round(float(bot_data["val_acc"]), 1) if bot_data["val_acc"] is not None else None,
+                            "validation_mae_10d": round(float(bot_data["val_mae"]), 2) if bot_data["val_mae"] is not None else None,
+                            "validation_acc_10d": round(float(bot_data["val_acc"]), 1) if bot_data["val_acc"] is not None else None,
+                            "result": "Pendiente"
+                        })
+                    clem_str = f", CLEM: {clem_corr:+.2f}°C" if clem_corr != 0 else ""
+                    print(f"   - {state['bots'][bot_id]['name']}: Apostó ${money_per_bet:.2f} a '{choices[0]['option']}' (Precio: ${choices[0]['price']:.2f}, Pred_IA: {pred_ia:.2f}°C{clem_str})")
+                    
+            if bets_placed_today:
+                state["active_bets"].append({
+                    "date": today_str,
+                    "city": city,
+                    "question": event.get("title"),
+                    "bets": bets_placed_today
+                })
 
     # 3. LOG CURVA DE CAPITAL HISTÓRICA
     history_entry = {
