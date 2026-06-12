@@ -2,7 +2,7 @@
   "bots": {
     "bot_v1": {
       "name": "Bot V1 (Base - 3.0 años, depth 4)",
-      "balance": 50.0,
+      "balance": 100.0,
       "initial_balance": 120.0,
       "roi": 0.0,
       "win_rate": 0.0,
@@ -11,7 +11,7 @@
     },
     "bot_cand_a": {
       "name": "Bot A (Max ROI - 2.5 años, depth 4)",
-      "balance": 50.0,
+      "balance": 100.0,
       "initial_balance": 120.0,
       "roi": 0.0,
       "win_rate": 0.0,
@@ -20,7 +20,7 @@
     },
     "bot_cand_b": {
       "name": "Bot B (Max Acierto - 2.0 años, depth 3, tendencias)",
-      "balance": 50.0,
+      "balance": 100.0,
       "initial_balance": 120.0,
       "roi": 0.0,
       "win_rate": 0.0,
@@ -40,58 +40,58 @@
           "option": "32°C",
           "price": 0.05,
           "invested": 5.0,
-          "prob_ia": 56.7,
-          "pred_ia_temp": 32.27,
+          "prob_ia": 53.7,
+          "pred_ia_temp": 32.34,
           "result": "Pendiente"
         },
         {
           "bot": "bot_v1",
           "market_id": "2488609",
           "option": "33°C",
+          "price": 0.058,
+          "invested": 5.0,
+          "prob_ia": 37.0,
+          "pred_ia_temp": 32.34,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2488608",
+          "option": "32°C",
           "price": 0.05,
+          "invested": 5.0,
+          "prob_ia": 56.7,
+          "pred_ia_temp": 32.27,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2488609",
+          "option": "33°C",
+          "price": 0.058,
           "invested": 5.0,
           "prob_ia": 32.8,
           "pred_ia_temp": 32.27,
           "result": "Pendiente"
         },
         {
-          "bot": "bot_cand_a",
-          "market_id": "2488608",
-          "option": "32°C",
-          "price": 0.05,
-          "invested": 5.0,
-          "prob_ia": 57.9,
-          "pred_ia_temp": 32.24,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_a",
-          "market_id": "2488609",
-          "option": "33°C",
-          "price": 0.05,
-          "invested": 5.0,
-          "prob_ia": 30.8,
-          "pred_ia_temp": 32.24,
-          "result": "Pendiente"
-        },
-        {
           "bot": "bot_cand_b",
           "market_id": "2488608",
           "option": "32°C",
           "price": 0.05,
           "invested": 5.0,
-          "prob_ia": 54.9,
-          "pred_ia_temp": 32.3,
+          "prob_ia": 57.8,
+          "pred_ia_temp": 32.21,
           "result": "Pendiente"
         },
         {
           "bot": "bot_cand_b",
           "market_id": "2488609",
           "option": "33°C",
-          "price": 0.05,
+          "price": 0.058,
           "invested": 5.0,
-          "prob_ia": 34.4,
-          "pred_ia_temp": 32.3,
+          "prob_ia": 29.8,
+          "pred_ia_temp": 32.21,
           "result": "Pendiente"
         }
       ]
@@ -108,7 +108,7 @@
           "price": 0.05,
           "invested": 10.0,
           "prob_ia": 75.8,
-          "pred_ia_temp": 16.85,
+          "pred_ia_temp": 16.87,
           "result": "Pendiente"
         },
         {
@@ -117,7 +117,7 @@
           "option": "17°C",
           "price": 0.05,
           "invested": 10.0,
-          "prob_ia": 78.3,
+          "prob_ia": 78.6,
           "pred_ia_temp": 16.91,
           "result": "Pendiente"
         },
@@ -128,252 +128,7 @@
           "price": 0.05,
           "invested": 10.0,
           "prob_ia": 74.2,
-          "pred_ia_temp": 16.9,
-          "result": "Pendiente"
-        }
-      ]
-    },
-    {
-      "date": "2026-06-12",
-      "city": "Madrid",
-      "question": "Highest temperature in Madrid on June 12?",
-      "bets": [
-        {
-          "bot": "bot_v1",
-          "market_id": "2488608",
-          "option": "32°C",
-          "price": 0.05,
-          "invested": 5.0,
-          "prob_ia": 55.4,
-          "pred_ia_temp": 32.3,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_v1",
-          "market_id": "2488609",
-          "option": "33°C",
-          "price": 0.08,
-          "invested": 5.0,
-          "prob_ia": 34.6,
-          "pred_ia_temp": 32.3,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_a",
-          "market_id": "2488608",
-          "option": "32°C",
-          "price": 0.05,
-          "invested": 5.0,
-          "prob_ia": 55.6,
-          "pred_ia_temp": 32.29,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_a",
-          "market_id": "2488609",
-          "option": "33°C",
-          "price": 0.08,
-          "invested": 5.0,
-          "prob_ia": 34.2,
-          "pred_ia_temp": 32.29,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_b",
-          "market_id": "2488608",
-          "option": "32°C",
-          "price": 0.05,
-          "invested": 5.0,
-          "prob_ia": 56.4,
-          "pred_ia_temp": 32.26,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_b",
-          "market_id": "2488609",
-          "option": "33°C",
-          "price": 0.08,
-          "invested": 5.0,
-          "prob_ia": 32.3,
-          "pred_ia_temp": 32.26,
-          "result": "Pendiente"
-        }
-      ]
-    },
-    {
-      "date": "2026-06-12",
-      "city": "London",
-      "question": "Highest temperature in London on June 12?",
-      "bets": [
-        {
-          "bot": "bot_v1",
-          "market_id": "2488531",
-          "option": "17°C",
-          "price": 0.05,
-          "invested": 10.0,
-          "prob_ia": 74.7,
-          "pred_ia_temp": 16.84,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_a",
-          "market_id": "2488531",
-          "option": "17°C",
-          "price": 0.05,
-          "invested": 10.0,
-          "prob_ia": 78.7,
-          "pred_ia_temp": 16.92,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_b",
-          "market_id": "2488531",
-          "option": "17°C",
-          "price": 0.05,
-          "invested": 10.0,
-          "prob_ia": 74.6,
-          "pred_ia_temp": 16.92,
-          "result": "Pendiente"
-        }
-      ]
-    },
-    {
-      "date": "2026-06-12",
-      "city": "Madrid",
-      "question": "Highest temperature in Madrid on June 12?",
-      "bets": [
-        {
-          "bot": "bot_v1",
-          "market_id": "2488608",
-          "option": "32°C",
-          "price": 0.05,
-          "invested": 5.0,
-          "prob_ia": 55.4,
-          "pred_ia_temp": 32.3,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_v1",
-          "market_id": "2488609",
-          "option": "33°C",
-          "price": 0.08,
-          "invested": 5.0,
-          "prob_ia": 34.6,
-          "pred_ia_temp": 32.3,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_a",
-          "market_id": "2488608",
-          "option": "32°C",
-          "price": 0.05,
-          "invested": 5.0,
-          "prob_ia": 55.6,
-          "pred_ia_temp": 32.29,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_a",
-          "market_id": "2488609",
-          "option": "33°C",
-          "price": 0.08,
-          "invested": 5.0,
-          "prob_ia": 34.2,
-          "pred_ia_temp": 32.29,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_b",
-          "market_id": "2488608",
-          "option": "32°C",
-          "price": 0.05,
-          "invested": 5.0,
-          "prob_ia": 56.4,
-          "pred_ia_temp": 32.26,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_b",
-          "market_id": "2488609",
-          "option": "33°C",
-          "price": 0.08,
-          "invested": 5.0,
-          "prob_ia": 32.3,
-          "pred_ia_temp": 32.26,
-          "result": "Pendiente"
-        }
-      ]
-    },
-    {
-      "date": "2026-06-12",
-      "city": "London",
-      "question": "Highest temperature in London on June 12?",
-      "bets": [
-        {
-          "bot": "bot_v1",
-          "market_id": "2488531",
-          "option": "17°C",
-          "price": 0.05,
-          "invested": 10.0,
-          "prob_ia": 74.7,
-          "pred_ia_temp": 16.84,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_a",
-          "market_id": "2488531",
-          "option": "17°C",
-          "price": 0.05,
-          "invested": 10.0,
-          "prob_ia": 78.7,
-          "pred_ia_temp": 16.92,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_b",
-          "market_id": "2488531",
-          "option": "17°C",
-          "price": 0.05,
-          "invested": 10.0,
-          "prob_ia": 74.6,
-          "pred_ia_temp": 16.92,
-          "result": "Pendiente"
-        }
-      ]
-    },
-    {
-      "date": "2026-06-12",
-      "city": "London",
-      "question": "Highest temperature in London on June 12?",
-      "bets": [
-        {
-          "bot": "bot_v1",
-          "market_id": "2488531",
-          "option": "17°C",
-          "price": 0.05,
-          "invested": 10.0,
-          "prob_ia": 74.7,
-          "pred_ia_temp": 16.84,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_a",
-          "market_id": "2488531",
-          "option": "17°C",
-          "price": 0.05,
-          "invested": 10.0,
-          "prob_ia": 78.7,
-          "pred_ia_temp": 16.92,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_b",
-          "market_id": "2488531",
-          "option": "17°C",
-          "price": 0.05,
-          "invested": 10.0,
-          "prob_ia": 74.6,
-          "pred_ia_temp": 16.92,
+          "pred_ia_temp": 16.91,
           "result": "Pendiente"
         }
       ]
