@@ -19,6 +19,23 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function updateDashboard(data) {
+    // 0. Update Alert Banner Container
+    const alertContainer = document.getElementById("alert-banner-container");
+    if (data.audit_alerts && Object.keys(data.audit_alerts).length > 0) {
+        let alertsHtml = "";
+        for (const city in data.audit_alerts) {
+            alertsHtml += `
+                <div class="audit-alert-banner" style="margin-bottom: 0.75rem;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span><strong>Alerta Validación (${city}):</strong> ${data.audit_alerts[city].message}</span>
+                </div>
+            `;
+        }
+        alertContainer.innerHTML = alertsHtml;
+    } else {
+        alertContainer.innerHTML = "";
+    }
+
     // 1. Update Badge / Last Updated Time
     const badge = document.getElementById("update-badge");
     if (data.history && data.history.length > 0) {
@@ -151,15 +168,35 @@ function renderActiveBets(activeBets) {
         group.bets.forEach(b => {
             const botDotClass = b.bot === "bot_v1" ? "dot-v1" : (b.bot === "bot_cand_a" ? "dot-a" : "dot-b");
             const botLabel = b.bot === "bot_v1" ? "V1 Base" : (b.bot === "bot_cand_a" ? "Bot A (ROI)" : "Bot B (Acc)");
+            
+            const satLabel = b.pred_sat_temp ? `Satélite Base: ${b.pred_sat_temp.toFixed(1)}°C` : '';
+            const biasLabel = b.ia_bias_correction !== undefined ? `Ajuste Sesgo IA: ${b.ia_bias_correction > 0 ? '+' : ''}${b.ia_bias_correction.toFixed(2)}°C` : '';
+            const sigmaLabel = b.sigma ? `Intervalo Confianza (σ): ±${b.sigma.toFixed(2)}°C` : '';
+            
+            let valLabel = '';
+            if (b.validation_mae_9d !== undefined && b.validation_mae_9d !== null) {
+                valLabel = `Val. 9d (MAE: ${b.validation_mae_9d.toFixed(2)}°C`;
+                if (b.validation_acc_9d !== undefined && b.validation_acc_9d !== null) {
+                    valLabel += ` | Acierto: ${b.validation_acc_9d.toFixed(1)}%`;
+                }
+                valLabel += `)`;
+            }
+            
+            const extraDetails = [satLabel, biasLabel, sigmaLabel, valLabel].filter(Boolean).join(" | ");
+            const extraDetailsHtml = extraDetails ? `<div class="bet-extra-details"><i class="fa-solid fa-calculator"></i> ${extraDetails}</div>` : '';
+            
             betsHtml += `
-                <div class="bet-bot-row">
-                    <span class="bet-bot-name">
-                        <span class="bet-dot ${botDotClass}"></span>
-                        ${botLabel}
-                    </span>
-                    <span class="bet-details-tag">
-                        ${b.option} @ $${b.price.toFixed(2)} | Inv: $${b.invested.toFixed(2)} | IA: ${b.prob_ia}% (Pred: ${b.pred_ia_temp}°C)
-                    </span>
+                <div class="bet-bot-row-container">
+                    <div class="bet-bot-row">
+                        <span class="bet-bot-name">
+                            <span class="bet-dot ${botDotClass}"></span>
+                            <strong>${botLabel}</strong>
+                        </span>
+                        <span class="bet-details-tag">
+                            Opción: <strong>${b.option}</strong> a $${b.price.toFixed(2)} | Inv: $${b.invested.toFixed(2)} | IA: <strong>${b.prob_ia}%</strong> (Pred. IA: <strong>${b.pred_ia_temp.toFixed(1)}°C</strong>)
+                        </span>
+                    </div>
+                    ${extraDetailsHtml}
                 </div>
             `;
         });

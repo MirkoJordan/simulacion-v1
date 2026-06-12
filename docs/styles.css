@@ -383,6 +383,39 @@ body {
 .pill-win { background-color: rgba(16, 185, 129, 0.15); color: #34D399; }
 .pill-loss { background-color: rgba(239, 68, 68, 0.15); color: #F87171; }
 
+.bet-bot-row-container {
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+}
+.bet-bot-row-container:last-child {
+    border-bottom: none;
+}
+.bet-extra-details {
+    margin-left: 1.25rem;
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    opacity: 0.8;
+    margin-top: 0.15rem;
+}
+
+.audit-alert-banner {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid #EF4444;
+    color: #F87171;
+    border-radius: 12px;
+    padding: 1rem;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    animation: flashAlert 2.5s infinite ease-in-out;
+}
+
+@keyframes flashAlert {
+    0%, 100% { border-color: rgba(239, 68, 68, 0.8); box-shadow: 0 0 5px rgba(239, 68, 68, 0.2); }
+    50% { border-color: rgba(239, 68, 68, 0.3); box-shadow: 0 0 15px rgba(239, 68, 68, 0.4); }
+}
+
 /* Footer */
 .app-footer {
     text-align: center;
