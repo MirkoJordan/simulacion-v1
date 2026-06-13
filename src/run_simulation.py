@@ -314,7 +314,7 @@ def verify_source_alignment(city_name, config, target_date, df_all, state, today
                 "message": f"Desalineación en validación de {city_name}: {mismatch_str}"
             }
         else:
-            print(f"   [✓ AUDITORÍA OK] Todo alineado en la ventana de validación de 9 días para {city_name}.")
+            print(f"   [OK AUDITORIA] Todo alineado en la ventana de validacion de 9 dias para {city_name}.")
             if "audit_alerts" in state and city_name in state["audit_alerts"]:
                 del state["audit_alerts"][city_name]
     except Exception as e:

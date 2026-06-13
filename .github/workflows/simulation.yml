@@ -1,13 +1,8 @@
 name: Simulation
 
 on:
-  schedule:
-    # Se ejecuta a las 04:00 UTC todos los días.
-    # En verano (junio), 04:00 UTC equivale a:
-    # - 06:00 AM en Madrid (UTC+2)
-    # - 05:00 AM en Londres (UTC+1)
-    - cron: '0 4 * * *'
-  workflow_dispatch: # Permite ejecutar el bot manualmente desde el panel de GitHub
+  workflow_dispatch: # Permite ejecutar el bot mediante API externa o manualmente
+
 
 permissions:
   contents: write
