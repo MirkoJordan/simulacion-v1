@@ -23,7 +23,8 @@ CITIES = {
         "lon": 0.055, 
         "timezone": "Europe/London",
         "station_id": "EGLC",
-        "city_slug": "london"
+        "city_slug": "london",
+        "cache_file": "eglc_historical.csv"
     }
 }
 
@@ -33,37 +34,79 @@ MAX_OPTS = 2
 
 # ----------------- DATA DOWNLOAD HELPERS -----------------
 
-def download_ground_truth_iem(station_id, past_days, tz):
+def download_ground_truth_iem(station_id, past_days, tz, cache_file=None):
+    df_cache = None
+    start_download = datetime.now() - pd.Timedelta(days=past_days + 30)
+    
+    # 1. Intentar cargar datos desde caché CSV
+    if cache_file:
+        cache_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", cache_file)
+        if os.path.exists(cache_path):
+            try:
+                df_cache = pd.read_csv(cache_path)
+                df_cache["Fecha"] = pd.to_datetime(df_cache["Fecha"])
+                latest_cache_date = df_cache["Fecha"].max()
+                # Descargar solo desde el día siguiente al último día en caché
+                start_download = latest_cache_date + pd.Timedelta(days=1)
+                print(f"   [Caché] Cargados datos de {station_id} desde {cache_file} hasta {latest_cache_date.strftime('%Y-%m-%d')}.")
+            except Exception as e:
+                print(f"   [Aviso Caché] Error al leer caché {cache_file}: {e}")
+                df_cache = None
+
     end = datetime.now() + timedelta(days=1)
-    start = datetime.now() - pd.Timedelta(days=past_days + 30)
-    url = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
-    params = {
-        "station": station_id,
-        "data": "tmpc,relh,sknt,mslp,alti",
-        "year1": str(start.year), "month1": str(start.month), "day1": str(start.day),
-        "year2": str(end.year), "month2": str(end.month), "day2": str(end.day),
-        "tz": tz,
-        "format": "onlydata"
-    }
-    r = requests.get(url, params=params)
-    lines = [line.split(",") for line in r.text.strip().split("\n") if not line.startswith("#") and "," in line]
-    df_raw = pd.DataFrame(lines[1:], columns=lines[0])
-    df_raw["tmpc"] = pd.to_numeric(df_raw["tmpc"], errors="coerce")
-    df_raw["relh"] = pd.to_numeric(df_raw["relh"], errors="coerce")
-    df_raw["sknt"] = pd.to_numeric(df_raw["sknt"], errors="coerce")
-    df_raw["mslp"] = pd.to_numeric(df_raw["mslp"], errors="coerce")
-    df_raw["alti"] = pd.to_numeric(df_raw["alti"], errors="coerce")
-    df_raw["mslp"] = df_raw["mslp"].fillna(df_raw["alti"] * 33.8639)
-    df_raw["wspd_kmh"] = df_raw["sknt"] * 1.852
-    df_raw["valid"] = pd.to_datetime(df_raw["valid"])
-    df_raw["Fecha"] = df_raw["valid"].dt.date
-    df_daily = df_raw.groupby("Fecha").agg(
-        Temp_Max_Real=("tmpc", "max"),
-        Humidity_Real=("relh", "mean"),
-        Wind_Speed_Real=("wspd_kmh", "max"),
-        Pressure_Real=("mslp", "mean")
-    ).reset_index()
-    df_daily["Fecha"] = pd.to_datetime(df_daily["Fecha"])
+    
+    # 2. Descargar el bloque faltante (gap)
+    if start_download >= end:
+        df_daily = df_cache
+    else:
+        url = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
+        params = {
+            "station": station_id,
+            "data": "tmpc,relh,sknt,mslp,alti",
+            "year1": str(start_download.year), "month1": str(start_download.month), "day1": str(start_download.day),
+            "year2": str(end.year), "month2": str(end.month), "day2": str(end.day),
+            "tz": tz,
+            "format": "onlydata"
+        }
+        try:
+            r = requests.get(url, params=params, timeout=15)
+            lines = [line.split(",") for line in r.text.strip().split("\n") if not line.startswith("#") and "," in line]
+            if len(lines) > 1:
+                df_raw = pd.DataFrame(lines[1:], columns=lines[0])
+                df_raw["tmpc"] = pd.to_numeric(df_raw["tmpc"], errors="coerce")
+                df_raw["relh"] = pd.to_numeric(df_raw["relh"], errors="coerce")
+                df_raw["sknt"] = pd.to_numeric(df_raw["sknt"], errors="coerce")
+                df_raw["mslp"] = pd.to_numeric(df_raw["mslp"], errors="coerce")
+                df_raw["alti"] = pd.to_numeric(df_raw["alti"], errors="coerce")
+                df_raw["mslp"] = df_raw["mslp"].fillna(df_raw["alti"] * 33.8639)
+                df_raw["wspd_kmh"] = df_raw["sknt"] * 1.852
+                df_raw["valid"] = pd.to_datetime(df_raw["valid"])
+                df_raw["Fecha"] = df_raw["valid"].dt.date
+                df_downloaded = df_raw.groupby("Fecha").agg(
+                    Temp_Max_Real=("tmpc", "max"),
+                    Humidity_Real=("relh", "mean"),
+                    Wind_Speed_Real=("wspd_kmh", "max"),
+                    Pressure_Real=("mslp", "mean")
+                ).reset_index()
+                df_downloaded["Fecha"] = pd.to_datetime(df_downloaded["Fecha"])
+                
+                # Combinar caché y descarga reciente
+                if df_cache is not None:
+                    df_daily = pd.concat([df_cache, df_downloaded]).drop_duplicates(subset=["Fecha"], keep="last")
+                else:
+                    df_daily = df_downloaded
+                print(f"   [API Iowa] Descargados con éxito {len(df_downloaded)} días recientes para {station_id}.")
+            else:
+                df_daily = df_cache if df_cache is not None else pd.DataFrame()
+                print(f"   [Aviso API] Iowa no devolvió nuevas filas para {station_id}. Usando caché.")
+        except Exception as e:
+            df_daily = df_cache if df_cache is not None else pd.DataFrame()
+            print(f"   [Aviso API] Error al descargar gap de {station_id}: {e}. Usando datos en caché.")
+
+    if df_daily is None or df_daily.empty:
+        raise Exception(f"No hay datos disponibles para la estación {station_id}")
+        
+    df_daily.sort_values(by="Fecha", inplace=True)
     return df_daily.ffill().bfill()
 
 def download_forecasts(lat, lon, past_days, tz):
@@ -136,7 +179,8 @@ def download_forecasts(lat, lon, past_days, tz):
 # ----------------- DATASET BUILDER -----------------
 
 def build_dataset(city_name, config):
-    df_real = download_ground_truth_iem(config["station_id"], 1100, config["timezone"])
+    cache_file = config.get("cache_file")
+    df_real = download_ground_truth_iem(config["station_id"], 1100, config["timezone"], cache_file=cache_file)
     df_fcst = download_forecasts(config["lat"], config["lon"], 1100, config["timezone"])
     df = pd.merge(df_real, df_fcst, on="Fecha", how="inner")
     df.sort_values(by="Fecha", inplace=True)
