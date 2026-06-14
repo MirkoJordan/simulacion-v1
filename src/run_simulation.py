@@ -512,6 +512,45 @@ def fetch_active_polymarket_event(city_slug, target_date):
         pass
     return None
 
+def update_history_curve(state):
+    dates = set()
+    for h in state.get("history", []):
+        dates.add(h["date"])
+    for b_group in state.get("resolved_bets", []):
+        dates.add(b_group["date"])
+    for b_group in state.get("active_bets", []):
+        dates.add(b_group["date"])
+    
+    sorted_dates = sorted(list(dates))
+    new_history = []
+    
+    for d_str in sorted_dates:
+        entry = {"date": d_str}
+        for bot_id, bot_data in state["bots"].items():
+            initial = bot_data["initial_balance"]
+            net_profit = 0.0
+            
+            for b_group in state.get("resolved_bets", []):
+                if b_group["date"] <= d_str:
+                    for b in b_group["bets"]:
+                        if b["bot"] == bot_id:
+                            res_str = b.get("result", "")
+                            if res_str.startswith("+"):
+                                try:
+                                    net_profit += float(res_str.replace("+", "").replace("USD", "").strip())
+                                except:
+                                    pass
+                            elif res_str.startswith("-"):
+                                try:
+                                    net_profit -= float(res_str.replace("-", "").replace("USD", "").strip())
+                                except:
+                                    pass
+            
+            entry[f"{bot_id}_balance"] = round(initial + net_profit, 2)
+        new_history.append(entry)
+        
+    state["history"] = new_history
+
 # ----------------- MAIN PIPELINE RUNNER -----------------
 
 def main():
@@ -760,20 +799,9 @@ def main():
                 "bets": bets_placed_today
             })
 
-    # 3. LOG CURVA DE CAPITAL HISTÓRICA
-    history_entry = {
-        "date": today_str,
-        "bot_v1_balance": round(state["bots"]["bot_v1"]["balance"] + sum(b["invested"] for g in state["active_bets"] for b in g["bets"] if b["bot"] == "bot_v1"), 2),
-        "bot_cand_a_balance": round(state["bots"]["bot_cand_a"]["balance"] + sum(b["invested"] for g in state["active_bets"] for b in g["bets"] if b["bot"] == "bot_cand_a"), 2),
-        "bot_cand_b_balance": round(state["bots"]["bot_cand_b"]["balance"] + sum(b["invested"] for g in state["active_bets"] for b in g["bets"] if b["bot"] == "bot_cand_b"), 2)
-    }
+    # 3. RECALCULAR CURVA DE CAPITAL HISTÓRICA
+    update_history_curve(state)
     
-    # Overwrite today's history log if it exists, or append new one
-    history_list = state.get("history", [])
-    history_list = [h for h in history_list if h["date"] != today_str]
-    history_list.append(history_entry)
-    state["history"] = history_list
-
     # Save state
     with open(state_file, "w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)

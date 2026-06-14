@@ -36,7 +36,44 @@ def fetch_active_polymarket_event(city_slug, target_date):
                     return e
     except:
         pass
-    return None
+def update_history_curve(state):
+    dates = set()
+    for h in state.get("history", []):
+        dates.add(h["date"])
+    for b_group in state.get("resolved_bets", []):
+        dates.add(b_group["date"])
+    for b_group in state.get("active_bets", []):
+        dates.add(b_group["date"])
+    
+    sorted_dates = sorted(list(dates))
+    new_history = []
+    
+    for d_str in sorted_dates:
+        entry = {"date": d_str}
+        for bot_id, bot_data in state["bots"].items():
+            initial = bot_data["initial_balance"]
+            net_profit = 0.0
+            
+            for b_group in state.get("resolved_bets", []):
+                if b_group["date"] <= d_str:
+                    for b in b_group["bets"]:
+                        if b["bot"] == bot_id:
+                            res_str = b.get("result", "")
+                            if res_str.startswith("+"):
+                                try:
+                                    net_profit += float(res_str.replace("+", "").replace("USD", "").strip())
+                                except:
+                                    pass
+                            elif res_str.startswith("-"):
+                                try:
+                                    net_profit -= float(res_str.replace("-", "").replace("USD", "").strip())
+                                except:
+                                    pass
+            
+            entry[f"{bot_id}_balance"] = round(initial + net_profit, 2)
+        new_history.append(entry)
+        
+    state["history"] = new_history
 
 def main():
     state_file = os.path.join(PROJECT_ROOT, "docs", "data", "simulation_state.json")
@@ -158,17 +195,18 @@ def main():
             print("   Mercado aún no resuelto en la API de Polymarket. Queda pendiente.")
             new_active_bets.append(bet_group)
             
-    if any_updated:
-        state["active_bets"] = new_active_bets
-        state["resolved_bets"] = resolved_bets
+    # Siempre actualizar el historial de capital y guardar el estado para mantener la coherencia
+    state["active_bets"] = new_active_bets
+    state["resolved_bets"] = resolved_bets
+    update_history_curve(state)
+    
+    with open(state_file, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2, ensure_ascii=False)
         
-        # Guardar el estado actualizado
-        with open(state_file, "w", encoding="utf-8") as f:
-            json.dump(state, f, indent=2, ensure_ascii=False)
-            
-        print("\n[+] El archivo simulation_state.json ha sido actualizado con los resultados oficiales.")
+    if any_updated:
+        print("\n[+] El archivo simulation_state.json y su historial de capital han sido actualizados con los nuevos resultados oficiales.")
     else:
-        print("\n[.] No se detectaron mercados resueltos recientemente. No hubo cambios en el estado.")
+        print("\n[+] Se ha recalculado el historial de capital. simulation_state.json guardado sin nuevos resultados.")
     print("=" * 77)
 
 if __name__ == "__main__":
