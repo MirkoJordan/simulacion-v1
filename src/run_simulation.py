@@ -7,6 +7,7 @@ import xgboost as xgb
 from datetime import datetime, timedelta
 import scipy.stats as stats
 import warnings
+import pytz
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
@@ -34,6 +35,78 @@ MAX_OPTS = 2
 
 # ----------------- DATA DOWNLOAD HELPERS -----------------
 
+def calculate_rh(t, td):
+    if t is None or td is None:
+        return np.nan
+    try:
+        t = float(t)
+        td = float(td)
+        es = 6.11 * (10 ** ((7.5 * t) / (237.3 + t)))
+        e = 6.11 * (10 ** ((7.5 * td) / (237.3 + td)))
+        rh = (e / es) * 100
+        return min(100.0, max(0.0, rh))
+    except:
+        return np.nan
+
+def download_ground_truth_aviation(station_id, tz_name):
+    print(f"   [API Aviación] Intentando descargar reportes METAR para {station_id}...")
+    url = "https://aviationweather.gov/api/data/metar"
+    params = {
+        "ids": station_id,
+        "format": "json",
+        "hours": "48"
+    }
+    
+    r = requests.get(url, params=params, timeout=15)
+    if r.status_code != 200:
+        raise Exception(f"AWC API error: {r.status_code}")
+        
+    data = r.json()
+    if not data:
+        raise Exception(f"No METAR reports returned for {station_id}")
+        
+    records = []
+    local_tz = pytz.timezone(tz_name)
+    
+    for item in data:
+        temp = item.get("temp")
+        dewp = item.get("dewp")
+        wspd = item.get("wspd")
+        altim = item.get("altim")
+        obs_time_ts = item.get("obsTime")
+        
+        if obs_time_ts is None or temp is None:
+            continue
+            
+        utc_dt = datetime.fromtimestamp(obs_time_ts, pytz.utc)
+        local_dt = utc_dt.astimezone(local_tz)
+        fecha = local_dt.date()
+        
+        rh = calculate_rh(temp, dewp)
+        wspd_kmh = float(wspd) * 1.852 if wspd is not None else np.nan
+        press = float(altim) if altim is not None else np.nan
+        
+        records.append({
+            "Fecha": pd.to_datetime(fecha),
+            "temp": float(temp),
+            "rh": rh,
+            "wspd_kmh": wspd_kmh,
+            "press": press
+        })
+        
+    df_raw = pd.DataFrame(records)
+    if df_raw.empty:
+        raise Exception("No valid rows parsed from METAR data")
+        
+    df_daily = df_raw.groupby("Fecha").agg(
+        Temp_Max_Real=("temp", "max"),
+        Humidity_Real=("rh", "mean"),
+        Wind_Speed_Real=("wspd_kmh", "max"),
+        Pressure_Real=("press", "mean")
+    ).reset_index()
+    
+    return df_daily
+
 def download_ground_truth_iem(station_id, past_days, tz, cache_file=None):
     df_cache = None
     start_download = datetime.now() - pd.Timedelta(days=past_days + 30)
@@ -56,9 +129,10 @@ def download_ground_truth_iem(station_id, past_days, tz, cache_file=None):
     end = datetime.now() + timedelta(days=1)
     
     # 2. Descargar el bloque faltante (gap)
-    if start_download >= end:
-        df_daily = df_cache
-    else:
+    df_downloaded = pd.DataFrame()
+    
+    if start_download < end:
+        # Intentar primero Iowa ASOS
         url = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
         params = {
             "station": station_id,
@@ -68,46 +142,66 @@ def download_ground_truth_iem(station_id, past_days, tz, cache_file=None):
             "tz": tz,
             "format": "onlydata"
         }
+        
         try:
             r = requests.get(url, params=params, timeout=15)
-            lines = [line.split(",") for line in r.text.strip().split("\n") if not line.startswith("#") and "," in line]
-            if len(lines) > 1:
-                df_raw = pd.DataFrame(lines[1:], columns=lines[0])
-                df_raw["tmpc"] = pd.to_numeric(df_raw["tmpc"], errors="coerce")
-                df_raw["relh"] = pd.to_numeric(df_raw["relh"], errors="coerce")
-                df_raw["sknt"] = pd.to_numeric(df_raw["sknt"], errors="coerce")
-                df_raw["mslp"] = pd.to_numeric(df_raw["mslp"], errors="coerce")
-                df_raw["alti"] = pd.to_numeric(df_raw["alti"], errors="coerce")
-                df_raw["mslp"] = df_raw["mslp"].fillna(df_raw["alti"] * 33.8639)
-                df_raw["wspd_kmh"] = df_raw["sknt"] * 1.852
-                df_raw["valid"] = pd.to_datetime(df_raw["valid"])
-                df_raw["Fecha"] = df_raw["valid"].dt.date
-                df_downloaded = df_raw.groupby("Fecha").agg(
-                    Temp_Max_Real=("tmpc", "max"),
-                    Humidity_Real=("relh", "mean"),
-                    Wind_Speed_Real=("wspd_kmh", "max"),
-                    Pressure_Real=("mslp", "mean")
-                ).reset_index()
-                df_downloaded["Fecha"] = pd.to_datetime(df_downloaded["Fecha"])
-                
-                # Combinar caché y descarga reciente
-                if df_cache is not None:
-                    df_daily = pd.concat([df_cache, df_downloaded]).drop_duplicates(subset=["Fecha"], keep="last")
-                else:
-                    df_daily = df_downloaded
-                print(f"   [API Iowa] Descargados con éxito {len(df_downloaded)} días recientes para {station_id}.")
+            # Detect rate-limit or error pages
+            if "Too many requests" in r.text or r.status_code != 200:
+                print(f"   [Aviso Iowa] Bloqueo por Rate-limit o error HTTP {r.status_code}. Usando fallback de Aviación.")
+                df_downloaded = download_ground_truth_aviation(station_id, tz)
             else:
-                df_daily = df_cache if df_cache is not None else pd.DataFrame()
-                print(f"   [Aviso API] Iowa no devolvió nuevas filas para {station_id}. Usando caché.")
+                lines = [line.split(",") for line in r.text.strip().split("\n") if not line.startswith("#") and "," in line]
+                if len(lines) > 1:
+                    df_raw = pd.DataFrame(lines[1:], columns=lines[0])
+                    df_raw["tmpc"] = pd.to_numeric(df_raw["tmpc"], errors="coerce")
+                    df_raw["relh"] = pd.to_numeric(df_raw["relh"], errors="coerce")
+                    df_raw["sknt"] = pd.to_numeric(df_raw["sknt"], errors="coerce")
+                    df_raw["mslp"] = pd.to_numeric(df_raw["mslp"], errors="coerce")
+                    df_raw["alti"] = pd.to_numeric(df_raw["alti"], errors="coerce")
+                    df_raw["mslp"] = df_raw["mslp"].fillna(df_raw["alti"] * 33.8639)
+                    df_raw["wspd_kmh"] = df_raw["sknt"] * 1.852
+                    df_raw["valid"] = pd.to_datetime(df_raw["valid"])
+                    df_raw["Fecha"] = df_raw["valid"].dt.date
+                    df_downloaded = df_raw.groupby("Fecha").agg(
+                        Temp_Max_Real=("tmpc", "max"),
+                        Humidity_Real=("relh", "mean"),
+                        Wind_Speed_Real=("wspd_kmh", "max"),
+                        Pressure_Real=("mslp", "mean")
+                    ).reset_index()
+                    df_downloaded["Fecha"] = pd.to_datetime(df_downloaded["Fecha"])
+                    print(f"   [API Iowa] Descargados con éxito {len(df_downloaded)} días recientes para {station_id}.")
+                else:
+                    print(f"   [Aviso Iowa] Respuesta vacía de Iowa ASOS. Usando fallback de Aviación.")
+                    df_downloaded = download_ground_truth_aviation(station_id, tz)
         except Exception as e:
-            df_daily = df_cache if df_cache is not None else pd.DataFrame()
-            print(f"   [Aviso API] Error al descargar gap de {station_id}: {e}. Usando datos en caché.")
+            print(f"   [Aviso Iowa] Error en conexión a Iowa: {e}. Usando fallback de Aviación.")
+            try:
+                df_downloaded = download_ground_truth_aviation(station_id, tz)
+            except Exception as e2:
+                print(f"   [⚠️ ERROR CRÍTICO] Ambos servidores fallaron. Error en fallback: {e2}")
+                df_downloaded = pd.DataFrame()
+
+    # Combinar caché y descarga reciente
+    if not df_downloaded.empty:
+        if df_cache is not None:
+            df_daily = pd.concat([df_cache, df_downloaded]).drop_duplicates(subset=["Fecha"], keep="last")
+        else:
+            df_daily = df_downloaded
+    else:
+        df_daily = df_cache if df_cache is not None else pd.DataFrame()
 
     if df_daily is None or df_daily.empty:
         raise Exception(f"No hay datos disponibles para la estación {station_id}")
         
     df_daily.sort_values(by="Fecha", inplace=True)
-    return df_daily.ffill().bfill()
+    df_daily = df_daily.ffill().bfill()
+    
+    # Filtrar estrictamente para no incluir el día de hoy (que aún no está terminado)
+    local_tz = pytz.timezone(tz)
+    today_date = pd.to_datetime(datetime.now(local_tz).date())
+    df_daily = df_daily[df_daily["Fecha"] < today_date]
+    
+    return df_daily
 
 def download_forecasts(lat, lon, past_days, tz):
     # 1. Descargar pronosticos historicos (previous-runs-api)
