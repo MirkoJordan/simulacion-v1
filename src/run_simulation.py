@@ -727,11 +727,16 @@ def main():
                 state["bots"][bot_id]["balance"] -= bet_amount
                 
                 for c in choices:
+                    # Aplicar penalización por deslizamiento (Slippage) basada en la inversión de esta apuesta
+                    # 0.002 de recargo por dólar invertido (refleja el deslizamiento típico de Polymarket en estos mercados)
+                    effective_price = min(0.99, c["price"] + 0.002 * money_per_bet)
+                    effective_price = round(effective_price, 3)
+                    
                     bets_placed_today.append({
                         "bot": bot_id,
                         "market_id": c["market_id"],
                         "option": c["option"],
-                        "price": c["price"],
+                        "price": effective_price,
                         "invested": round(money_per_bet, 2),
                         "prob_ia": round(c["prob"] * 100, 1),
                         "pred_ia_temp": round(pred_ia, 2),
@@ -743,7 +748,7 @@ def main():
                         "result": "Pendiente"
                     })
                     val_err_str = f"Val MAE 9d: {bot_data['val_mae']:.2f}°C, Val Acc: {bot_data['val_acc']:.1f}%" if bot_data["val_mae"] is not None else "N/A"
-                    print(f"   - {state['bots'][bot_id]['name']}: Apostó ${money_per_bet:.2f} a '{c['option']}' (Precio: ${c['price']:.2f}, IA: {c['prob']*100:.1f}%, Satélite: {today_row['Temp_Max_Predicha'].values[0]:.2f}°C, Sesgo IA: {pred_bias:+.2f}°C, Pred_IA: {pred_ia:.2f}°C, {val_err_str})")
+                    print(f"   - {state['bots'][bot_id]['name']}: Apostó ${money_per_bet:.2f} a '{c['option']}' (Precio Promedio: ${effective_price:.3f}, IA: {c['prob']*100:.1f}%, Satélite: {today_row['Temp_Max_Predicha'].values[0]:.2f}°C, Sesgo IA: {pred_bias:+.2f}°C, Pred_IA: {pred_ia:.2f}°C, {val_err_str})")
             else:
                 print(f"   - {state['bots'][bot_id]['name']}: Sin operaciones (No se encontró edge o probabilidad mínima).")
                 
