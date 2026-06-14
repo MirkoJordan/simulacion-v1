@@ -403,6 +403,22 @@ def verify_source_alignment(city_name, config, target_date, df_all, state, today
             
             day_row = df_all[df_all["Fecha"] == check_date]
             if day_row.empty:
+                # Alerta si falta el dato de la estación pero el mercado en Polymarket ya cerró y tiene ganador
+                event = fetch_active_polymarket_event(config["city_slug"], check_date)
+                if event:
+                    resolved_winner = None
+                    for m in event.get("markets", []):
+                        outcome_prices = m.get("outcomePrices")
+                        if outcome_prices:
+                            try:
+                                prices = json.loads(outcome_prices)
+                                if len(prices) >= 1 and float(prices[0]) > 0.95:
+                                    resolved_winner = m.get("groupItemTitle")
+                                    break
+                            except:
+                                pass
+                    if resolved_winner:
+                        mismatches.append(f"{check_date_str} (Dato de estación FALTANTE pero Polymarket resuelto en '{resolved_winner}')")
                 continue
             real_val = day_row["Temp_Max_Real"].values[0]
             real_rounded = int(round(real_val))
