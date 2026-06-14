@@ -423,11 +423,10 @@ def main():
         city = bet_group.get("city")
         print(f"\n[+] Verificando resolución de Polymarket para {city} ({bet_date_str})...")
         
-        # We need to query Polymarket to see which market won
-        markets_resolved = []
-        resolved_winner = None
+        # Query all markets involved in this bet group
+        resolved_bets_data = []
+        all_resolved = True
         
-        # Retrieve all markets involved to verify status
         for b in bet_group.get("bets", []):
             m_id = b.get("market_id")
             m_url = f"https://gamma-api.polymarket.com/markets/{m_id}"
@@ -435,63 +434,95 @@ def main():
                 mr = requests.get(m_url)
                 if mr.status_code == 200:
                     m_data = mr.json()
-                    if m_data.get("resolved") == True:
-                        markets_resolved.append(m_data)
+                    # Check if resolved officially
+                    if m_data.get("umaResolutionStatus") == "resolved":
+                        resolved_bets_data.append((b, m_data))
+                    else:
+                        all_resolved = False
+                        break
+                else:
+                    all_resolved = False
+                    break
             except Exception as e:
                 print(f"   Error al consultar mercado {m_id}: {e}")
+                all_resolved = False
+                break
                 
-        # If the markets are resolved, find the winner option
-        if len(markets_resolved) > 0 and all(m.get("resolved") for m in markets_resolved):
-            # The winning market is the one where Yes outcomePrices is 1.0 (or close to it)
-            for m in markets_resolved:
-                outcome_prices = m.get("outcomePrices")
+        if all_resolved and len(resolved_bets_data) > 0:
+            print(f"   ¡Mercados resueltos oficialmente para {city} ({bet_date_str})!")
+            
+            # Determine the winning option (either one of our bets, or another option if we lost)
+            resolved_winner = "Otra opción (Perdimos)"
+            
+            for b, m_data in resolved_bets_data:
+                outcome_prices = m_data.get("outcomePrices")
                 if outcome_prices:
                     prices = json.loads(outcome_prices)
                     if len(prices) >= 1 and float(prices[0]) > 0.95:
-                        resolved_winner = m.get("groupItemTitle")
+                        resolved_winner = b.get("option")
                         break
-                        
-            if resolved_winner:
-                print(f"   ¡Mercado resuelto oficialmente! Ganador: {resolved_winner}")
-                # Distribute payoffs
-                for b in bet_group.get("bets", []):
-                    bot_id = b.get("bot")
-                    invested = b.get("invested")
-                    option_bought = b.get("option")
-                    buy_price = b.get("price")
+            
+            # If we couldn't find a winner among our bets, we check the actual temperature from Polymarket event
+            if resolved_winner == "Otra opción (Perdimos)":
+                try:
+                    event_data = fetch_active_polymarket_event(city.lower(), datetime.strptime(bet_date_str, "%Y-%m-%d"))
+                    if event_data:
+                        for m in event_data.get("markets", []):
+                            outcome_prices = m.get("outcomePrices")
+                            if outcome_prices:
+                                prices = json.loads(outcome_prices)
+                                if len(prices) >= 1 and float(prices[0]) > 0.95:
+                                    resolved_winner = m.get("groupItemTitle")
+                                    break
+                except Exception as e:
+                    print(f"   No se pudo obtener el nombre exacto de la opción ganadora: {e}")
+            
+            print(f"   Ganador oficial determinado: {resolved_winner}")
+            
+            # Distribute payoffs
+            for b, m_data in resolved_bets_data:
+                bot_id = b.get("bot")
+                invested = b.get("invested")
+                option_bought = b.get("option")
+                buy_price = b.get("price")
+                
+                bot_ref = state["bots"][bot_id]
+                bot_ref["trades_count"] += 1
+                
+                # Check if this specific bet won (YES price > 0.95)
+                outcome_prices = m_data.get("outcomePrices")
+                won = False
+                if outcome_prices:
+                    prices = json.loads(outcome_prices)
+                    if len(prices) >= 1 and float(prices[0]) > 0.95:
+                        won = True
+                
+                if won:
+                    payoff = invested / buy_price
+                    net_profit = payoff - invested
+                    bot_ref["balance"] += payoff
+                    bot_ref["wins"] += 1
+                    b["result"] = f"+{net_profit:.2f} USD"
+                    print(f"   - {bot_ref['name']}: GANADOR de {option_bought} (Pago: +${payoff:.2f})")
+                else:
+                    b["result"] = f"-{invested:.2f} USD"
+                    print(f"   - {bot_ref['name']}: PERDEDOR de {option_bought} (Pago: $0.00)")
                     
-                    bot_ref = state["bots"][bot_id]
-                    bot_ref["trades_count"] += 1
-                    
-                    if option_bought == resolved_winner:
-                        payoff = invested / buy_price
-                        net_profit = payoff - invested
-                        bot_ref["balance"] += payoff
-                        bot_ref["wins"] += 1
-                        b["result"] = f"+{net_profit:.2f} USD"
-                        print(f"   - {bot_ref['name']}: GANADOR (Pago: +${payoff:.2f})")
-                    else:
-                        b["result"] = f"-{invested:.2f} USD"
-                        print(f"   - {bot_ref['name']}: PERDEDOR (Pago: $0.00)")
-                        
-                # Recalculate ROI and Win Rate
-                for bot_id, bot_ref in state["bots"].items():
-                    initial = bot_ref["initial_balance"]
-                    current = bot_ref["balance"]
-                    bot_ref["roi"] = round(((current - initial) / initial) * 100, 2)
-                    bot_ref["win_rate"] = round((bot_ref["wins"] / bot_ref["trades_count"]) * 100, 2) if bot_ref["trades_count"] > 0 else 0.0
-                    
-                # Add to resolved logs
-                resolved_bets.append({
-                    "date": bet_date_str,
-                    "city": city,
-                    "question": bet_group.get("question"),
-                    "winner_option": resolved_winner,
-                    "bets": bet_group.get("bets")
-                })
-            else:
-                print("   Error: Todos los mercados cerrados pero no se pudo determinar un ganador. Reintentando mañana.")
-                new_active_bets.append(bet_group)
+            # Recalculate ROI and Win Rate
+            for bot_id, bot_ref in state["bots"].items():
+                initial = bot_ref["initial_balance"]
+                current = bot_ref["balance"]
+                bot_ref["roi"] = round(((current - initial) / initial) * 100, 2)
+                bot_ref["win_rate"] = round((bot_ref["wins"] / bot_ref["trades_count"]) * 100, 2) if bot_ref["trades_count"] > 0 else 0.0
+                
+            # Add to resolved logs
+            resolved_bets.append({
+                "date": bet_date_str,
+                "city": city,
+                "question": bet_group.get("question"),
+                "winner_option": resolved_winner,
+                "bets": bet_group.get("bets")
+            })
         else:
             print("   Mercado aún no resuelto en la API de Polymarket. Se reintentará en el próximo ciclo.")
             new_active_bets.append(bet_group)
