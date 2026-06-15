@@ -2,7 +2,7 @@
   "bots": {
     "bot_v1": {
       "name": "Bot V1 (Base - 3.0 años, depth 4)",
-      "balance": 80.0,
+      "balance": 161.01371001246363,
       "initial_balance": 120.0,
       "roi": -33.33,
       "win_rate": 0.0,
@@ -11,7 +11,7 @@
     },
     "bot_cand_a": {
       "name": "Bot A (Max ROI - 2.5 años, depth 4)",
-      "balance": 80.0,
+      "balance": 173.06190278354796,
       "initial_balance": 120.0,
       "roi": -33.33,
       "win_rate": 0.0,
@@ -20,7 +20,7 @@
     },
     "bot_cand_b": {
       "name": "Bot B (Max Acierto - 2.0 años, depth 3, tendencias)",
-      "balance": 80.0,
+      "balance": 173.06190278354796,
       "initial_balance": 120.0,
       "roi": -33.33,
       "win_rate": 0.0,
