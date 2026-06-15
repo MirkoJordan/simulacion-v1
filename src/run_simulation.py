@@ -276,7 +276,7 @@ def build_dataset(city_name, config):
     cache_file = config.get("cache_file")
     df_real = download_ground_truth_iem(config["station_id"], 1100, config["timezone"], cache_file=cache_file)
     df_fcst = download_forecasts(config["lat"], config["lon"], 1100, config["timezone"])
-    df = pd.merge(df_real, df_fcst, on="Fecha", how="inner")
+    df = pd.merge(df_fcst, df_real, on="Fecha", how="left")
     df.sort_values(by="Fecha", inplace=True)
     df.reset_index(drop=True, inplace=True)
     df["Temp_Max_Real_Ayer"] = df["Temp_Max_Real"].shift(1)
@@ -300,7 +300,25 @@ def build_dataset(city_name, config):
     df["Dia_Ano"] = df["Fecha"].dt.dayofyear
     df["Wind_Dir_Sin"] = np.sin(np.radians(df["Wind_Dir_Mean_Predicha"]))
     df["Wind_Dir_Cos"] = np.cos(np.radians(df["Wind_Dir_Mean_Predicha"]))
-    return df.dropna()
+    
+    # Columnas de características necesarias para predecir hoy
+    feature_cols = [
+        "Temp_Max_Predicha", "Temp_Min_Predicha", "Temp_Mean_Predicha",
+        "Humidity_Mean_Predicha", "Cloud_Mean_Predicha", "Pressure_Mean_Predicha",
+        "Wind_Max_Predicha", "Wind_Dir_Sin", "Wind_Dir_Cos", "Mes", "Dia_Ano",
+        "Temp_Max_Real_Ayer", "Humidity_Real_Ayer", "Wind_Speed_Real_Ayer", "Pressure_Real_Ayer",
+        "Error_Ayer", "Error_Mean_3d", "Error_Mean_7d", "Error_Delta",
+        "Pressure_Trend_Predicha", "Temp_Spread_Predicha", "Temp_Trend_Predicha"
+    ]
+    df = df.dropna(subset=feature_cols)
+    
+    # Mantener hoy (aunque no tenga Temp_Max_Real todavía), pero descartar días pasados que no tengan datos reales
+    local_tz = pytz.timezone(config["timezone"])
+    today_date = pd.to_datetime(datetime.now(local_tz).date())
+    historical_mask = df["Fecha"] < today_date
+    df = df[~historical_mask | df["Temp_Max_Real"].notna()]
+    
+    return df
 
 # ----------------- TRAINING AND PREDICTION -----------------
 
