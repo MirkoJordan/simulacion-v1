@@ -11,6 +11,27 @@ import pytz
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
+# ----------------- NETWORK HELPER WITH RETRIES -----------------
+
+def requests_get_with_retries(url, params=None, timeout=10, max_retries=3, backoff_factor=2):
+    import time
+    last_exception = None
+    for attempt in range(max_retries):
+        try:
+            r = requests.get(url, params=params, timeout=timeout)
+            if r.status_code == 429 or r.status_code >= 500:
+                print(f"      [Intento {attempt+1}/{max_retries}] API de consulta devolvió error HTTP {r.status_code}. Reintentando...")
+                time.sleep(backoff_factor * (attempt + 1))
+                continue
+            return r
+        except requests.RequestException as e:
+            last_exception = e
+            print(f"      [Intento {attempt+1}/{max_retries}] Error de red/conexión: {e}. Reintentando...")
+            time.sleep(backoff_factor * (attempt + 1))
+            
+    # Si todos los intentos fallan, lanzamos la excepción para detener la ejecución
+    raise last_exception
+
 CITIES = {
     "Madrid": {
         "lat": 40.4936, 
@@ -57,7 +78,7 @@ def download_ground_truth_aviation(station_id, tz_name):
         "hours": "48"
     }
     
-    r = requests.get(url, params=params, timeout=15)
+    r = requests_get_with_retries(url, params=params, timeout=15)
     if r.status_code != 200:
         raise Exception(f"AWC API error: {r.status_code}")
         
@@ -144,7 +165,7 @@ def download_ground_truth_iem(station_id, past_days, tz, cache_file=None):
         }
         
         try:
-            r = requests.get(url, params=params, timeout=15)
+            r = requests_get_with_retries(url, params=params, timeout=15)
             # Detect rate-limit or error pages
             if "Too many requests" in r.text or r.status_code != 200:
                 print(f"   [Aviso Iowa] Bloqueo por Rate-limit o error HTTP {r.status_code}. Usando fallback de Aviación.")
@@ -212,7 +233,7 @@ def download_forecasts(lat, lon, past_days, tz):
         "timezone": tz
     }
     try:
-        r_hist = requests.get(url_hist, params=params_hist).json()
+        r_hist = requests_get_with_retries(url_hist, params=params_hist, timeout=10).json()
         df_hourly_hist = pd.DataFrame({
             "Fecha_Hora": pd.to_datetime(r_hist["hourly"]["time"]),
             "Temp_Predicha": r_hist["hourly"]["temperature_2m"],
@@ -234,7 +255,7 @@ def download_forecasts(lat, lon, past_days, tz):
         "timezone": tz
     }
     try:
-        r_live = requests.get(url_live, params=params_live).json()
+        r_live = requests_get_with_retries(url_live, params=params_live, timeout=10).json()
         df_hourly_live = pd.DataFrame({
             "Fecha_Hora": pd.to_datetime(r_live["hourly"]["time"]),
             "Temp_Predicha": r_live["hourly"]["temperature_2m"],
@@ -504,7 +525,7 @@ def fetch_active_polymarket_event(city_slug, target_date):
     # Try exact slug first
     url = f"https://gamma-api.polymarket.com/events?slug={exact_slug}"
     try:
-        r = requests.get(url)
+        r = requests_get_with_retries(url, timeout=10)
         if r.status_code == 200 and r.json():
             return r.json()[0]
     except:
@@ -518,7 +539,7 @@ def fetch_active_polymarket_event(city_slug, target_date):
         "query": f"{city_slug} temperature"
     }
     try:
-        r = requests.get(search_url, params=params)
+        r = requests_get_with_retries(search_url, params=params, timeout=10)
         if r.status_code == 200:
             events = r.json()
             for e in events:
@@ -598,7 +619,7 @@ def main():
             m_id = b.get("market_id")
             m_url = f"https://gamma-api.polymarket.com/markets/{m_id}"
             try:
-                mr = requests.get(m_url)
+                mr = requests_get_with_retries(m_url, timeout=10)
                 if mr.status_code == 200:
                     m_data = mr.json()
                     # Check if resolved officially
