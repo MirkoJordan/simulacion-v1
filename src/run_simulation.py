@@ -165,7 +165,7 @@ def download_ground_truth_iem(station_id, past_days, tz, cache_file=None):
         }
         
         try:
-            r = requests_get_with_retries(url, params=params, timeout=15)
+            r = requests_get_with_retries(url, params=params, timeout=30)
             # Detect rate-limit or error pages
             if "Too many requests" in r.text or r.status_code != 200:
                 print(f"   [Aviso Iowa] Bloqueo por Rate-limit o error HTTP {r.status_code}. Usando fallback de Aviación.")
@@ -233,7 +233,7 @@ def download_forecasts(lat, lon, past_days, tz):
         "timezone": tz
     }
     try:
-        r_hist = requests_get_with_retries(url_hist, params=params_hist, timeout=10).json()
+        r_hist = requests_get_with_retries(url_hist, params=params_hist, timeout=30).json()
         df_hourly_hist = pd.DataFrame({
             "Fecha_Hora": pd.to_datetime(r_hist["hourly"]["time"]),
             "Temp_Predicha": r_hist["hourly"]["temperature_2m"],
