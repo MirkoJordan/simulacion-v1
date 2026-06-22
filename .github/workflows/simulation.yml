@@ -25,13 +25,17 @@ jobs:
         python -m pip install --upgrade pip
         pip install xgboost pandas numpy requests scipy scikit-learn
 
-    - name: Run daily simulation
+    - name: Run daily simulation V1
+      run: python src/run_simulation.py
+
+    - name: Run daily simulation V2
       run: python simulacion-v2/src/run_simulation.py
 
     - name: Commit and push changes
       run: |
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add docs/data/simulation_state.json
         git add simulacion-v2/docs/data/simulation_state.json
-        # Solo hace commit si hay cambios en el archivo de estado
-        git diff-index --quiet HEAD || (git commit -m "Simulación Diaria V2: $(date +'%Y-%m-%d')" && git push)
+        # Solo hace commit si hay cambios en los archivos de estado
+        git diff-index --quiet HEAD || (git commit -m "Simulación Diaria V1 y V2: $(date +'%Y-%m-%d')" && git push)
