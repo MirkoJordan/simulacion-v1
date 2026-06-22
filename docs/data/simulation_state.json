@@ -4,27 +4,27 @@
       "name": "Bot V1 (Base - 3.0 años, depth 4)",
       "balance": 238.7608370575815,
       "initial_balance": 120.0,
-      "roi": 107.3,
-      "win_rate": 45.83,
-      "trades_count": 24,
+      "roi": 98.97,
+      "win_rate": 61.11,
+      "trades_count": 18,
       "wins": 11
     },
     "bot_cand_a": {
       "name": "Bot A (Max ROI - 2.5 años, depth 4)",
       "balance": 272.27470580802844,
       "initial_balance": 120.0,
-      "roi": 135.23,
-      "win_rate": 50.0,
-      "trades_count": 24,
+      "roi": 126.9,
+      "win_rate": 66.67,
+      "trades_count": 18,
       "wins": 12
     },
     "bot_cand_b": {
       "name": "Bot B (Max Acierto - 2.0 años, depth 3, tendencias)",
       "balance": 262.57373571101874,
       "initial_balance": 120.0,
-      "roi": 127.14,
-      "win_rate": 48.0,
-      "trades_count": 25,
+      "roi": 118.81,
+      "win_rate": 66.67,
+      "trades_count": 18,
       "wins": 12
     }
   },

@@ -590,6 +590,26 @@ def update_history_curve(state):
         
     state["history"] = new_history
 
+def recalculate_statistics(state):
+    for bot_id, bot_data in state["bots"].items():
+        decisions_count = 0
+        decisions_won = 0
+        
+        for group in state.get("resolved_bets", []):
+            bot_bets = [b for b in group.get("bets", []) if b["bot"] == bot_id]
+            if bot_bets:
+                decisions_count += 1
+                if any(b.get("result", "").startswith("+") for b in bot_bets):
+                    decisions_won += 1
+                    
+        bot_data["trades_count"] = decisions_count
+        bot_data["wins"] = decisions_won
+        bot_data["win_rate"] = round((decisions_won / decisions_count) * 100, 2) if decisions_count > 0 else 0.0
+        
+        initial = bot_data["initial_balance"]
+        current = bot_data["balance"]
+        bot_data["roi"] = round(((current - initial) / initial) * 100, 2)
+
 # ----------------- MAIN PIPELINE RUNNER -----------------
 
 def main():
@@ -675,7 +695,6 @@ def main():
                 buy_price = b.get("price")
                 
                 bot_ref = state["bots"][bot_id]
-                bot_ref["trades_count"] += 1
                 
                 # Check if this specific bet won (YES price > 0.95)
                 outcome_prices = m_data.get("outcomePrices")
@@ -689,20 +708,12 @@ def main():
                     payoff = invested / buy_price
                     net_profit = payoff - invested
                     bot_ref["balance"] += payoff
-                    bot_ref["wins"] += 1
                     b["result"] = f"+{net_profit:.2f} USD"
                     print(f"   - {bot_ref['name']}: GANADOR de {option_bought} (Pago: +${payoff:.2f})")
                 else:
                     b["result"] = f"-{invested:.2f} USD"
                     print(f"   - {bot_ref['name']}: PERDEDOR de {option_bought} (Pago: $0.00)")
                     
-            # Recalculate ROI and Win Rate
-            for bot_id, bot_ref in state["bots"].items():
-                initial = bot_ref["initial_balance"]
-                current = bot_ref["balance"]
-                bot_ref["roi"] = round(((current - initial) / initial) * 100, 2)
-                bot_ref["win_rate"] = round((bot_ref["wins"] / bot_ref["trades_count"]) * 100, 2) if bot_ref["trades_count"] > 0 else 0.0
-                
             # Add to resolved logs
             resolved_bets.append({
                 "date": bet_date_str,
@@ -711,6 +722,9 @@ def main():
                 "winner_option": resolved_winner,
                 "bets": bet_group.get("bets")
             })
+            
+            # Recalculate statistics
+            recalculate_statistics(state)
         else:
             print("   Mercado aún no resuelto en la API de Polymarket. Se reintentará en el próximo ciclo.")
             new_active_bets.append(bet_group)
@@ -840,6 +854,7 @@ def main():
 
     # 3. RECALCULAR CURVA DE CAPITAL HISTÓRICA
     update_history_curve(state)
+    recalculate_statistics(state)
     
     # Save state
     with open(state_file, "w", encoding="utf-8") as f:
