@@ -6,6 +6,27 @@ from datetime import datetime
 # Ajustar ruta de trabajo al directorio raíz del proyecto
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+def requests_get_with_retries(url, params=None, timeout=10, max_retries=7, backoff_factor=5):
+    import time
+    last_exception = None
+    for attempt in range(max_retries):
+        try:
+            r = requests.get(url, params=params, timeout=timeout)
+            if r.status_code == 429 or r.status_code >= 500:
+                wait_time = backoff_factor * (2 ** attempt)
+                print(f"      [Intento {attempt+1}/{max_retries}] API de consulta devolvió error HTTP {r.status_code}. Reintentando en {wait_time}s...")
+                time.sleep(wait_time)
+                continue
+            return r
+        except requests.RequestException as e:
+            last_exception = e
+            wait_time = backoff_factor * (2 ** attempt)
+            print(f"      [Intento {attempt+1}/{max_retries}] Error de red/conexión: {e}. Reintentando en {wait_time}s...")
+            time.sleep(wait_time)
+            
+    # Si todos los intentos fallan, lanzamos la excepción para detener la ejecución
+    raise last_exception
+
 def fetch_active_polymarket_event(city_slug, target_date):
     mes = target_date.strftime('%B').lower()
     dia = target_date.day
@@ -14,11 +35,11 @@ def fetch_active_polymarket_event(city_slug, target_date):
     
     url = f"https://gamma-api.polymarket.com/events?slug={exact_slug}"
     try:
-        r = requests.get(url, timeout=10)
+        r = requests_get_with_retries(url, timeout=10)
         if r.status_code == 200 and r.json():
             return r.json()[0]
-    except:
-        pass
+    except Exception as e:
+        print(f"   [Error Evento] Falló obtener evento exacto ({exact_slug}): {e}")
         
     search_url = "https://gamma-api.polymarket.com/events"
     params = {
@@ -27,15 +48,15 @@ def fetch_active_polymarket_event(city_slug, target_date):
         "query": f"{city_slug} temperature"
     }
     try:
-        r = requests.get(search_url, params=params, timeout=10)
+        r = requests_get_with_retries(search_url, params=params, timeout=10)
         if r.status_code == 200:
             events = r.json()
             for e in events:
                 title = e.get("title", "").lower()
                 if city_slug in title and mes in title and str(dia) in title:
                     return e
-    except:
-        pass
+    except Exception as e:
+        print(f"   [Error Evento] Falló búsqueda general de eventos: {e}")
 def update_history_curve(state):
     dates = set()
     for h in state.get("history", []):
@@ -123,7 +144,7 @@ def main():
             m_id = b.get("market_id")
             m_url = f"https://gamma-api.polymarket.com/markets/{m_id}"
             try:
-                mr = requests.get(m_url, timeout=10)
+                mr = requests_get_with_retries(m_url, timeout=10)
                 if mr.status_code == 200:
                     m_data = mr.json()
                     if m_data.get("umaResolutionStatus") == "resolved":

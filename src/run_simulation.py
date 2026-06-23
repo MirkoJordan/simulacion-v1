@@ -13,21 +13,23 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 # ----------------- NETWORK HELPER WITH RETRIES -----------------
 
-def requests_get_with_retries(url, params=None, timeout=10, max_retries=3, backoff_factor=2):
+def requests_get_with_retries(url, params=None, timeout=10, max_retries=7, backoff_factor=5):
     import time
     last_exception = None
     for attempt in range(max_retries):
         try:
             r = requests.get(url, params=params, timeout=timeout)
             if r.status_code == 429 or r.status_code >= 500:
-                print(f"      [Intento {attempt+1}/{max_retries}] API de consulta devolvió error HTTP {r.status_code}. Reintentando...")
-                time.sleep(backoff_factor * (attempt + 1))
+                wait_time = backoff_factor * (2 ** attempt)
+                print(f"      [Intento {attempt+1}/{max_retries}] API de consulta devolvió error HTTP {r.status_code}. Reintentando en {wait_time}s...")
+                time.sleep(wait_time)
                 continue
             return r
         except requests.RequestException as e:
             last_exception = e
-            print(f"      [Intento {attempt+1}/{max_retries}] Error de red/conexión: {e}. Reintentando...")
-            time.sleep(backoff_factor * (attempt + 1))
+            wait_time = backoff_factor * (2 ** attempt)
+            print(f"      [Intento {attempt+1}/{max_retries}] Error de red/conexión: {e}. Reintentando en {wait_time}s...")
+            time.sleep(wait_time)
             
     # Si todos los intentos fallan, lanzamos la excepción para detener la ejecución
     raise last_exception
