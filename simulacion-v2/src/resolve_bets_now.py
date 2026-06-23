@@ -32,7 +32,7 @@ def fetch_active_polymarket_event(city_slug, target_date):
             events = r.json()
             for e in events:
                 title = e.get("title", "").lower()
-                if mes in title and str(dia) in title and str(ano) in title:
+                if city_slug in title and mes in title and str(dia) in title and str(ano) in title:
                     return e
     except:
         pass
@@ -96,7 +96,8 @@ def recalculate_statistics(state):
         bot_data["roi"] = round(((current - initial) / initial) * 100, 2)
 
 def main():
-    state_file = os.path.join(PROJECT_ROOT, "docs", "data", "simulation_state.json")
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    state_file = os.path.join(repo_root, "docs", "simulacion-v2", "data", "simulation_state.json")
     if not os.path.exists(state_file):
         print(f"[❌ ERROR] No se encontró el archivo de estado en {state_file}")
         return

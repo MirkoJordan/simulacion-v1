@@ -32,7 +32,7 @@ def fetch_active_polymarket_event(city_slug, target_date):
             events = r.json()
             for e in events:
                 title = e.get("title", "").lower()
-                if mes in title and str(dia) in title and str(ano) in title:
+                if city_slug in title and mes in title and str(dia) in title and str(ano) in title:
                     return e
     except:
         pass

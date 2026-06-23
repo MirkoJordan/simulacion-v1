@@ -36,6 +36,6 @@ jobs:
         git config --global user.name 'github-actions[bot]'
         git config --global user.email 'github-actions[bot]@users.noreply.github.com'
         git add docs/data/simulation_state.json
-        git add simulacion-v2/docs/data/simulation_state.json
+        git add docs/simulacion-v2/data/simulation_state.json
         # Solo hace commit si hay cambios en los archivos de estado
         git diff-index --quiet HEAD || (git commit -m "Simulación Diaria V1 y V2: $(date +'%Y-%m-%d')" && git push)

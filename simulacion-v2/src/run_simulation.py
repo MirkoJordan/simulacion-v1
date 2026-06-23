@@ -544,9 +544,9 @@ def fetch_active_polymarket_event(city_slug, target_date):
         if r.status_code == 200:
             events = r.json()
             for e in events:
-                # Match title words for date e.g., "June 12" and "2026"
+                # Match title words for date and ensure it corresponds to the correct city
                 title = e.get("title", "").lower()
-                if mes in title and str(dia) in title and str(ano) in title:
+                if city_slug in title and mes in title and str(dia) in title and str(ano) in title:
                     return e
     except:
         pass
@@ -614,7 +614,8 @@ def recalculate_statistics(state):
 # ----------------- MAIN PIPELINE RUNNER -----------------
 
 def main():
-    state_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), "docs", "data", "simulation_state.json")
+    PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    state_file = os.path.join(PROJECT_ROOT, "docs", "simulacion-v2", "data", "simulation_state.json")
     with open(state_file, "r", encoding="utf-8") as f:
         state = json.load(f)
         
