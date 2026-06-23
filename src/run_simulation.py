@@ -737,6 +737,17 @@ def main():
     
     for city, config in CITIES.items():
         print(f"\n[{city.upper()}]:")
+        
+        # Check if we already have active bets for this city today to prevent double betting
+        already_bet = False
+        for bet_group in state.get("active_bets", []):
+            if bet_group.get("date") == today_str and bet_group.get("city") == city:
+                already_bet = True
+                break
+        if already_bet:
+            print(f"   [!] Ya existen apuestas activas registradas para {city} hoy ({today_str}). Omitiendo simulación de compra para evitar duplicados.")
+            continue
+            
         # Find active event for today
         event = fetch_active_polymarket_event(config["city_slug"], today)
         if not event:
