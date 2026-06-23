@@ -545,7 +545,7 @@ def fetch_active_polymarket_event(city_slug, target_date):
             for e in events:
                 # Match title words for date and ensure it corresponds to the correct city
                 title = e.get("title", "").lower()
-                if city_slug in title and mes in title and str(dia) in title and str(ano) in title:
+                if city_slug in title and mes in title and str(dia) in title:
                     return e
     except:
         pass
