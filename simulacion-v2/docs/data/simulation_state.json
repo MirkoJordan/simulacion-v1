@@ -2,27 +2,27 @@
   "bots": {
     "bot_v1": {
       "name": "Bot V1 (Base - 3.0 años, depth 4)",
-      "balance": 110.0,
+      "balance": 100.0,
       "initial_balance": 120.0,
-      "roi": -8.33,
+      "roi": -16.67,
       "win_rate": 0.0,
       "trades_count": 0,
       "wins": 0
     },
     "bot_cand_a": {
       "name": "Bot A (Max ROI - 2.5 años, depth 4)",
-      "balance": 110.0,
+      "balance": 100.0,
       "initial_balance": 120.0,
-      "roi": -8.33,
+      "roi": -16.67,
       "win_rate": 0.0,
       "trades_count": 0,
       "wins": 0
     },
     "bot_cand_b": {
       "name": "Bot B (Max Acierto - 2.0 años, depth 3, tendencias)",
-      "balance": 110.0,
+      "balance": 100.0,
       "initial_balance": 120.0,
-      "roi": -8.33,
+      "roi": -16.67,
       "win_rate": 0.0,
       "trades_count": 0,
       "wins": 0
@@ -69,6 +69,58 @@
           "market_id": "2625786",
           "option": "33°C",
           "price": 0.29,
+          "invested": 10.0,
+          "prob_ia": 73.3,
+          "pred_ia_temp": 33.13,
+          "pred_sat_temp": 33.4,
+          "ia_bias_correction": -0.27,
+          "sigma": 0.43,
+          "validation_mae_9d": 0.38,
+          "validation_acc_9d": 66.7,
+          "result": "Pendiente"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-23",
+      "city": "London",
+      "question": "Highest temperature in London on June 23?",
+      "bets": [
+        {
+          "bot": "bot_v1",
+          "market_id": "2625786",
+          "option": "33°C",
+          "price": 0.294,
+          "invested": 10.0,
+          "prob_ia": 74.4,
+          "pred_ia_temp": 33.16,
+          "pred_sat_temp": 33.4,
+          "ia_bias_correction": -0.24,
+          "sigma": 0.41,
+          "validation_mae_9d": 0.38,
+          "validation_acc_9d": 66.7,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2625786",
+          "option": "33°C",
+          "price": 0.294,
+          "invested": 10.0,
+          "prob_ia": 79.3,
+          "pred_ia_temp": 33.05,
+          "pred_sat_temp": 33.4,
+          "ia_bias_correction": -0.35,
+          "sigma": 0.39,
+          "validation_mae_9d": 0.4,
+          "validation_acc_9d": 66.7,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_b",
+          "market_id": "2625786",
+          "option": "33°C",
+          "price": 0.294,
           "invested": 10.0,
           "prob_ia": 73.3,
           "pred_ia_temp": 33.13,
