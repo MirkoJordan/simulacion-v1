@@ -34,6 +34,9 @@ jobs:
     - name: Run daily simulation V3
       run: python simulacion-v3/src/run_simulation.py
 
+    - name: Run daily simulation V4
+      run: python simulacion-v4/src/run_simulation.py
+
     - name: Commit and push changes
       run: |
         git config --global user.name 'github-actions[bot]'
@@ -41,5 +44,6 @@ jobs:
         git add docs/data/simulation_state.json
         git add docs/simulacion-v2/data/simulation_state.json
         git add docs/simulacion-v3/data/simulation_state.json
+        git add docs/simulacion-v4/data/simulation_state.json
         # Solo hace commit si hay cambios en los archivos de estado
-        git diff-index --quiet HEAD || (git commit -m "Simulación Diaria V1, V2 y V3: $(date +'%Y-%m-%d')" && git push)
+        git diff-index --quiet HEAD || (git commit -m "Simulación Diaria V1, V2, V3 y V4: $(date +'%Y-%m-%d')" && git push)

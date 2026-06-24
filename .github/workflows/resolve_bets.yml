@@ -33,6 +33,9 @@ jobs:
     - name: Resolve bets manually V3
       run: python simulacion-v3/src/resolve_bets_now.py
 
+    - name: Resolve bets manually V4
+      run: python simulacion-v4/src/resolve_bets_now.py
+
     - name: Commit and push changes
       run: |
         git config --global user.name 'github-actions[bot]'
@@ -40,4 +43,5 @@ jobs:
         git add docs/data/simulation_state.json
         git add docs/simulacion-v2/data/simulation_state.json
         git add docs/simulacion-v3/data/simulation_state.json
-        git diff-index --quiet HEAD || (git commit -m "Resolución Manual de Apuestas V1, V2 y V3: $(date +'%Y-%m-%d')" && git push)
+        git add docs/simulacion-v4/data/simulation_state.json
+        git diff-index --quiet HEAD || (git commit -m "Resolución Manual de Apuestas V1, V2, V3 y V4: $(date +'%Y-%m-%d')" && git push)
