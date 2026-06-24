@@ -346,7 +346,7 @@ def get_trained_models_for_city(df_all, target_date):
         hits_a = int((pred_a_val.round().astype(int) == df_val["Temp_Max_Real"].round().astype(int)).sum())
         val_acc_a = float(hits_a / len(df_val) * 100)
 
-    # Bot B (Acc Máximo)
+    # Bot B (ROI Máximo con tendencias)
     train_start_b = train_end - pd.Timedelta(days=730)
     df_b = df_all[(df_all["Fecha"] < train_end) & (df_all["Fecha"] >= train_start_b)].copy()
     model_b = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, subsample=0.8, colsample_bytree=0.8, random_state=42)
@@ -361,10 +361,25 @@ def get_trained_models_for_city(df_all, target_date):
         hits_b = int((pred_b_val.round().astype(int) == df_val["Temp_Max_Real"].round().astype(int)).sum())
         val_acc_b = float(hits_b / len(df_val) * 100)
 
+    # Bot V4 (Redondeo Puro)
+    # Comparte la configuración del Bot B (XGBoost con depth 3) pero se resolverá por redondeo
+    model_v4 = xgb.XGBRegressor(n_estimators=100, max_depth=3, learning_rate=0.05, subsample=0.8, colsample_bytree=0.8, random_state=42)
+    model_v4.fit(df_b[features], df_b["Temp_Max_Real"])
+    pred_v4_train = model_v4.predict(df_b[features])
+    sigma_v4 = (df_b["Temp_Max_Real"] - pred_v4_train).std()
+    
+    val_mae_v4, val_acc_v4 = None, None
+    if not df_val.empty:
+        pred_v4_val = model_v4.predict(df_val[features])
+        val_mae_v4 = float((df_val["Temp_Max_Real"] - pred_v4_val).abs().mean())
+        hits_v4 = int((pred_v4_val.round().astype(int) == df_val["Temp_Max_Real"].round().astype(int)).sum())
+        val_acc_v4 = float(hits_v4 / len(df_val) * 100)
+
     return {
         "bot_v1": {"model": model_v1, "features": features, "sigma": sigma_v1, "val_mae": val_mae_v1, "val_acc": val_acc_v1},
         "bot_cand_a": {"model": model_a, "features": features, "sigma": sigma_a, "val_mae": val_mae_a, "val_acc": val_acc_a},
-        "bot_cand_b": {"model": model_b, "features": features, "sigma": sigma_b, "val_mae": val_mae_b, "val_acc": val_acc_b}
+        "bot_cand_b": {"model": model_b, "features": features, "sigma": sigma_b, "val_mae": val_mae_b, "val_acc": val_acc_b},
+        "bot_v4": {"model": model_v4, "features": features, "sigma": sigma_v4, "val_mae": val_mae_v4, "val_acc": val_acc_v4}
     }
 
 def get_probability_from_distribution(col_name, pred_val, sigma):
@@ -684,7 +699,34 @@ def main():
                 if price <= 0.05: price = 0.05
                 
                 col_name = m.get("groupItemTitle")
-                prob = get_probability_from_distribution(col_name, pred_ia, sigma)
+                
+                if bot_id == "bot_v4":
+                    # Redondeo puro: probabilidad de 100% al intervalo que contenga el redondeo exacto de pred_ia
+                    # El redondeo físico normal nos da el entero más próximo
+                    rounded_target = round(pred_ia)
+                    
+                    # Comprobar si la opción de mercado coincide con este entero
+                    is_match = False
+                    if "or below" in col_name:
+                        try:
+                            val = float(col_name.split("°C")[0].strip())
+                            if rounded_target <= val: is_match = True
+                        except: pass
+                    elif "or higher" in col_name:
+                        try:
+                            val = float(col_name.split("°C")[0].strip())
+                            if rounded_target >= val: is_match = True
+                        except: pass
+                    else:
+                        try:
+                            val = float(col_name.replace("°C", "").strip())
+                            if rounded_target == val: is_match = True
+                        except: pass
+                    
+                    prob = 1.0 if is_match else 0.0
+                else:
+                    prob = get_probability_from_distribution(col_name, pred_ia, sigma)
+                    
                 edge = prob - price
                 
                 # Regla óptima de la V3/V4: Edge mínimo de 8%

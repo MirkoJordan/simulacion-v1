@@ -26,6 +26,15 @@
       "wins": 0,
       "win_rate": 0.0,
       "roi": 0.0
+    },
+    "bot_v4": {
+      "name": "Bot V4 (Redondeo Puro)",
+      "initial_balance": 120.0,
+      "balance": 120.0,
+      "trades_count": 0,
+      "wins": 0,
+      "win_rate": 0.0,
+      "roi": 0.0
     }
   },
   "active_bets": [],
@@ -35,7 +44,8 @@
       "date": "2026-06-23",
       "bot_v1_balance": 120.0,
       "bot_cand_a_balance": 120.0,
-      "bot_cand_b_balance": 120.0
+      "bot_cand_b_balance": 120.0,
+      "bot_v4_balance": 120.0
     }
   ]
 }
