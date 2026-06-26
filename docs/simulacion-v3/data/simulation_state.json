@@ -4,7 +4,7 @@
       "name": "Bot V1 (Base)",
       "initial_balance": 120.0,
       "balance": 100.0,
-      "trades_count": 0,
+      "trades_count": 2,
       "wins": 0,
       "win_rate": 0.0,
       "roi": -16.67
@@ -13,7 +13,7 @@
       "name": "Bot A (Max ROI)",
       "initial_balance": 120.0,
       "balance": 100.0,
-      "trades_count": 0,
+      "trades_count": 2,
       "wins": 0,
       "win_rate": 0.0,
       "roi": -16.67
@@ -22,17 +22,19 @@
       "name": "Bot B (Max Acierto)",
       "initial_balance": 120.0,
       "balance": 100.0,
-      "trades_count": 0,
+      "trades_count": 2,
       "wins": 0,
       "win_rate": 0.0,
       "roi": -16.67
     }
   },
-  "active_bets": [
+  "active_bets": [],
+  "resolved_bets": [
     {
       "date": "2026-06-25",
       "city": "Madrid",
       "question": "Highest temperature in Madrid on June 25?",
+      "winner_option": "32°C",
       "bets": [
         {
           "bot": "bot_v1",
@@ -47,7 +49,7 @@
           "sigma": 0.57,
           "validation_mae_9d": 0.48,
           "validation_acc_9d": 44.4,
-          "result": "Pendiente"
+          "result": "-10.00 USD"
         },
         {
           "bot": "bot_cand_a",
@@ -62,7 +64,7 @@
           "sigma": 0.56,
           "validation_mae_9d": 0.46,
           "validation_acc_9d": 55.6,
-          "result": "Pendiente"
+          "result": "-10.00 USD"
         },
         {
           "bot": "bot_cand_b",
@@ -77,7 +79,7 @@
           "sigma": 0.58,
           "validation_mae_9d": 0.4,
           "validation_acc_9d": 77.8,
-          "result": "Pendiente"
+          "result": "-10.00 USD"
         }
       ]
     },
@@ -85,6 +87,7 @@
       "date": "2026-06-25",
       "city": "London",
       "question": "Highest temperature in London on June 25?",
+      "winner_option": "29°C",
       "bets": [
         {
           "bot": "bot_v1",
@@ -99,7 +102,7 @@
           "sigma": 0.41,
           "validation_mae_9d": 0.69,
           "validation_acc_9d": 66.7,
-          "result": "Pendiente"
+          "result": "-5.00 USD"
         },
         {
           "bot": "bot_v1",
@@ -114,7 +117,7 @@
           "sigma": 0.41,
           "validation_mae_9d": 0.69,
           "validation_acc_9d": 66.7,
-          "result": "Pendiente"
+          "result": "-5.00 USD"
         },
         {
           "bot": "bot_cand_a",
@@ -129,7 +132,7 @@
           "sigma": 0.4,
           "validation_mae_9d": 0.66,
           "validation_acc_9d": 55.6,
-          "result": "Pendiente"
+          "result": "-5.00 USD"
         },
         {
           "bot": "bot_cand_a",
@@ -144,7 +147,7 @@
           "sigma": 0.4,
           "validation_mae_9d": 0.66,
           "validation_acc_9d": 55.6,
-          "result": "Pendiente"
+          "result": "-5.00 USD"
         },
         {
           "bot": "bot_cand_b",
@@ -159,7 +162,7 @@
           "sigma": 0.43,
           "validation_mae_9d": 0.67,
           "validation_acc_9d": 55.6,
-          "result": "Pendiente"
+          "result": "-5.00 USD"
         },
         {
           "bot": "bot_cand_b",
@@ -174,12 +177,11 @@
           "sigma": 0.43,
           "validation_mae_9d": 0.67,
           "validation_acc_9d": 55.6,
-          "result": "Pendiente"
+          "result": "-5.00 USD"
         }
       ]
     }
   ],
-  "resolved_bets": [],
   "history": [
     {
       "date": "2026-06-23",
@@ -189,9 +191,9 @@
     },
     {
       "date": "2026-06-25",
-      "bot_v1_balance": 120.0,
-      "bot_cand_a_balance": 120.0,
-      "bot_cand_b_balance": 120.0
+      "bot_v1_balance": 100.0,
+      "bot_cand_a_balance": 100.0,
+      "bot_cand_b_balance": 100.0
     }
   ]
 }
