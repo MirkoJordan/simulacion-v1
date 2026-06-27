@@ -2,33 +2,183 @@
   "bots": {
     "bot_v1": {
       "name": "Bot V1 (Base - 3.0 años, depth 4)",
-      "balance": 243.03541975318066,
+      "balance": 223.03541975318066,
       "initial_balance": 120.0,
-      "roi": 102.53,
+      "roi": 85.86,
       "win_rate": 61.54,
       "trades_count": 26,
       "wins": 16
     },
     "bot_cand_a": {
       "name": "Bot A (Max ROI - 2.5 años, depth 4)",
-      "balance": 276.0882058686421,
+      "balance": 256.0882058686421,
       "initial_balance": 120.0,
-      "roi": 130.07,
+      "roi": 113.41,
       "win_rate": 65.38,
       "trades_count": 26,
       "wins": 17
     },
     "bot_cand_b": {
       "name": "Bot B (Max Acierto - 2.0 años, depth 3, tendencias)",
-      "balance": 275.39006523232007,
+      "balance": 255.39006523232007,
       "initial_balance": 120.0,
-      "roi": 129.49,
+      "roi": 112.83,
       "win_rate": 65.38,
       "trades_count": 26,
       "wins": 17
     }
   },
-  "active_bets": [],
+  "active_bets": [
+    {
+      "date": "2026-06-27",
+      "city": "Madrid",
+      "question": "Highest temperature in Madrid on June 27?",
+      "bets": [
+        {
+          "bot": "bot_v1",
+          "market_id": "2679286",
+          "option": "36°C",
+          "price": 0.365,
+          "invested": 10.0,
+          "prob_ia": 48.6,
+          "pred_ia_temp": 35.55,
+          "pred_sat_temp": 34.5,
+          "ia_bias_correction": 1.05,
+          "sigma": 0.58,
+          "validation_mae_9d": 0.41,
+          "validation_acc_9d": 55.6,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2679286",
+          "option": "36°C",
+          "price": 0.365,
+          "invested": 10.0,
+          "prob_ia": 43.6,
+          "pred_ia_temp": 35.46,
+          "pred_sat_temp": 34.5,
+          "ia_bias_correction": 0.96,
+          "sigma": 0.57,
+          "validation_mae_9d": 0.39,
+          "validation_acc_9d": 55.6,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_b",
+          "market_id": "2679286",
+          "option": "36°C",
+          "price": 0.365,
+          "invested": 10.0,
+          "prob_ia": 41.0,
+          "pred_ia_temp": 35.41,
+          "pred_sat_temp": 34.5,
+          "ia_bias_correction": 0.91,
+          "sigma": 0.59,
+          "validation_mae_9d": 0.38,
+          "validation_acc_9d": 66.7,
+          "result": "Pendiente"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-27",
+      "city": "London",
+      "question": "Highest temperature in London on June 27?",
+      "bets": [
+        {
+          "bot": "bot_v1",
+          "market_id": "2679211",
+          "option": "32°C",
+          "price": 0.21,
+          "invested": 5.0,
+          "prob_ia": 67.2,
+          "pred_ia_temp": 32.29,
+          "pred_sat_temp": 32.4,
+          "ia_bias_correction": -0.11,
+          "sigma": 0.41,
+          "validation_mae_9d": 0.63,
+          "validation_acc_9d": 77.8,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_v1",
+          "market_id": "2679212",
+          "option": "33°C",
+          "price": 0.075,
+          "invested": 5.0,
+          "prob_ia": 30.1,
+          "pred_ia_temp": 32.29,
+          "pred_sat_temp": 32.4,
+          "ia_bias_correction": -0.11,
+          "sigma": 0.41,
+          "validation_mae_9d": 0.63,
+          "validation_acc_9d": 77.8,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2679211",
+          "option": "32°C",
+          "price": 0.21,
+          "invested": 5.0,
+          "prob_ia": 60.7,
+          "pred_ia_temp": 32.38,
+          "pred_sat_temp": 32.4,
+          "ia_bias_correction": -0.02,
+          "sigma": 0.4,
+          "validation_mae_9d": 0.61,
+          "validation_acc_9d": 66.7,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2679212",
+          "option": "33°C",
+          "price": 0.075,
+          "invested": 5.0,
+          "prob_ia": 37.7,
+          "pred_ia_temp": 32.38,
+          "pred_sat_temp": 32.4,
+          "ia_bias_correction": -0.02,
+          "sigma": 0.4,
+          "validation_mae_9d": 0.61,
+          "validation_acc_9d": 66.7,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_b",
+          "market_id": "2679212",
+          "option": "33°C",
+          "price": 0.075,
+          "invested": 5.0,
+          "prob_ia": 43.1,
+          "pred_ia_temp": 32.43,
+          "pred_sat_temp": 32.4,
+          "ia_bias_correction": 0.03,
+          "sigma": 0.43,
+          "validation_mae_9d": 0.63,
+          "validation_acc_9d": 55.6,
+          "result": "Pendiente"
+        },
+        {
+          "bot": "bot_cand_b",
+          "market_id": "2679211",
+          "option": "32°C",
+          "price": 0.21,
+          "invested": 5.0,
+          "prob_ia": 54.7,
+          "pred_ia_temp": 32.43,
+          "pred_sat_temp": 32.4,
+          "ia_bias_correction": 0.03,
+          "sigma": 0.43,
+          "validation_mae_9d": 0.63,
+          "validation_acc_9d": 55.6,
+          "result": "Pendiente"
+        }
+      ]
+    }
+  ],
   "history": [
     {
       "date": "2026-06-11",
@@ -116,6 +266,12 @@
     },
     {
       "date": "2026-06-26",
+      "bot_v1_balance": 243.05,
+      "bot_cand_a_balance": 276.1,
+      "bot_cand_b_balance": 275.4
+    },
+    {
+      "date": "2026-06-27",
       "bot_v1_balance": 243.05,
       "bot_cand_a_balance": 276.1,
       "bot_cand_b_balance": 275.4
@@ -1953,7 +2109,7 @@
   ],
   "audit_alerts": {
     "Madrid": {
-      "date": "2026-06-26",
+      "date": "2026-06-27",
       "message": "Desalineación en validación de Madrid: 2026-06-22 (ASOS 40.0°C vs Polymarket '39°C')"
     }
   }
