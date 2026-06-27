@@ -4,7 +4,7 @@
       "name": "Bot V1 (Base)",
       "initial_balance": 120.0,
       "balance": 80.0,
-      "trades_count": 2,
+      "trades_count": 4,
       "wins": 0,
       "win_rate": 0.0,
       "roi": -33.33
@@ -13,7 +13,7 @@
       "name": "Bot A (Max ROI)",
       "initial_balance": 120.0,
       "balance": 80.0,
-      "trades_count": 2,
+      "trades_count": 4,
       "wins": 0,
       "win_rate": 0.0,
       "roi": -33.33
@@ -22,163 +22,13 @@
       "name": "Bot B (Max Acierto)",
       "initial_balance": 120.0,
       "balance": 80.0,
-      "trades_count": 2,
+      "trades_count": 4,
       "wins": 0,
       "win_rate": 0.0,
       "roi": -33.33
     }
   },
-  "active_bets": [
-    {
-      "date": "2026-06-26",
-      "city": "Madrid",
-      "question": "Highest temperature in Madrid on June 26?",
-      "bets": [
-        {
-          "bot": "bot_v1",
-          "market_id": "2664319",
-          "option": "32°C",
-          "price": 0.205,
-          "invested": 5.0,
-          "prob_ia": 56.0,
-          "pred_ia_temp": 31.72,
-          "pred_sat_temp": 30.8,
-          "ia_bias_correction": 0.92,
-          "sigma": 0.58,
-          "validation_mae_9d": 0.45,
-          "validation_acc_9d": 44.4,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_v1",
-          "market_id": "2664318",
-          "option": "31°C",
-          "price": 0.06,
-          "invested": 5.0,
-          "prob_ia": 33.4,
-          "pred_ia_temp": 31.72,
-          "pred_sat_temp": 30.8,
-          "ia_bias_correction": 0.92,
-          "sigma": 0.58,
-          "validation_mae_9d": 0.45,
-          "validation_acc_9d": 44.4,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_a",
-          "market_id": "2664319",
-          "option": "32°C",
-          "price": 0.205,
-          "invested": 5.0,
-          "prob_ia": 56.0,
-          "pred_ia_temp": 31.7,
-          "pred_sat_temp": 30.8,
-          "ia_bias_correction": 0.9,
-          "sigma": 0.56,
-          "validation_mae_9d": 0.45,
-          "validation_acc_9d": 44.4,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_a",
-          "market_id": "2664318",
-          "option": "31°C",
-          "price": 0.06,
-          "invested": 5.0,
-          "prob_ia": 34.7,
-          "pred_ia_temp": 31.7,
-          "pred_sat_temp": 30.8,
-          "ia_bias_correction": 0.9,
-          "sigma": 0.56,
-          "validation_mae_9d": 0.45,
-          "validation_acc_9d": 44.4,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_b",
-          "market_id": "2664319",
-          "option": "32°C",
-          "price": 0.205,
-          "invested": 5.0,
-          "prob_ia": 53.4,
-          "pred_ia_temp": 31.66,
-          "pred_sat_temp": 30.8,
-          "ia_bias_correction": 0.86,
-          "sigma": 0.58,
-          "validation_mae_9d": 0.41,
-          "validation_acc_9d": 66.7,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_b",
-          "market_id": "2664318",
-          "option": "31°C",
-          "price": 0.06,
-          "invested": 5.0,
-          "prob_ia": 36.8,
-          "pred_ia_temp": 31.66,
-          "pred_sat_temp": 30.8,
-          "ia_bias_correction": 0.86,
-          "sigma": 0.58,
-          "validation_mae_9d": 0.41,
-          "validation_acc_9d": 66.7,
-          "result": "Pendiente"
-        }
-      ]
-    },
-    {
-      "date": "2026-06-26",
-      "city": "London",
-      "question": "Highest temperature in London on June 26?",
-      "bets": [
-        {
-          "bot": "bot_v1",
-          "market_id": "2664239",
-          "option": "32°C or below",
-          "price": 0.07,
-          "invested": 10.0,
-          "prob_ia": 100.0,
-          "pred_ia_temp": 29.38,
-          "pred_sat_temp": 29.6,
-          "ia_bias_correction": -0.22,
-          "sigma": 0.41,
-          "validation_mae_9d": 0.68,
-          "validation_acc_9d": 66.7,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_a",
-          "market_id": "2664239",
-          "option": "32°C or below",
-          "price": 0.07,
-          "invested": 10.0,
-          "prob_ia": 100.0,
-          "pred_ia_temp": 29.3,
-          "pred_sat_temp": 29.6,
-          "ia_bias_correction": -0.3,
-          "sigma": 0.4,
-          "validation_mae_9d": 0.66,
-          "validation_acc_9d": 55.6,
-          "result": "Pendiente"
-        },
-        {
-          "bot": "bot_cand_b",
-          "market_id": "2664239",
-          "option": "32°C or below",
-          "price": 0.07,
-          "invested": 10.0,
-          "prob_ia": 100.0,
-          "pred_ia_temp": 29.2,
-          "pred_sat_temp": 29.6,
-          "ia_bias_correction": -0.4,
-          "sigma": 0.43,
-          "validation_mae_9d": 0.67,
-          "validation_acc_9d": 55.6,
-          "result": "Pendiente"
-        }
-      ]
-    }
-  ],
+  "active_bets": [],
   "resolved_bets": [
     {
       "date": "2026-06-25",
@@ -330,6 +180,157 @@
           "result": "-5.00 USD"
         }
       ]
+    },
+    {
+      "date": "2026-06-26",
+      "city": "Madrid",
+      "question": "Highest temperature in Madrid on June 26?",
+      "winner_option": "33°C",
+      "bets": [
+        {
+          "bot": "bot_v1",
+          "market_id": "2664319",
+          "option": "32°C",
+          "price": 0.205,
+          "invested": 5.0,
+          "prob_ia": 56.0,
+          "pred_ia_temp": 31.72,
+          "pred_sat_temp": 30.8,
+          "ia_bias_correction": 0.92,
+          "sigma": 0.58,
+          "validation_mae_9d": 0.45,
+          "validation_acc_9d": 44.4,
+          "result": "-5.00 USD"
+        },
+        {
+          "bot": "bot_v1",
+          "market_id": "2664318",
+          "option": "31°C",
+          "price": 0.06,
+          "invested": 5.0,
+          "prob_ia": 33.4,
+          "pred_ia_temp": 31.72,
+          "pred_sat_temp": 30.8,
+          "ia_bias_correction": 0.92,
+          "sigma": 0.58,
+          "validation_mae_9d": 0.45,
+          "validation_acc_9d": 44.4,
+          "result": "-5.00 USD"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2664319",
+          "option": "32°C",
+          "price": 0.205,
+          "invested": 5.0,
+          "prob_ia": 56.0,
+          "pred_ia_temp": 31.7,
+          "pred_sat_temp": 30.8,
+          "ia_bias_correction": 0.9,
+          "sigma": 0.56,
+          "validation_mae_9d": 0.45,
+          "validation_acc_9d": 44.4,
+          "result": "-5.00 USD"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2664318",
+          "option": "31°C",
+          "price": 0.06,
+          "invested": 5.0,
+          "prob_ia": 34.7,
+          "pred_ia_temp": 31.7,
+          "pred_sat_temp": 30.8,
+          "ia_bias_correction": 0.9,
+          "sigma": 0.56,
+          "validation_mae_9d": 0.45,
+          "validation_acc_9d": 44.4,
+          "result": "-5.00 USD"
+        },
+        {
+          "bot": "bot_cand_b",
+          "market_id": "2664319",
+          "option": "32°C",
+          "price": 0.205,
+          "invested": 5.0,
+          "prob_ia": 53.4,
+          "pred_ia_temp": 31.66,
+          "pred_sat_temp": 30.8,
+          "ia_bias_correction": 0.86,
+          "sigma": 0.58,
+          "validation_mae_9d": 0.41,
+          "validation_acc_9d": 66.7,
+          "result": "-5.00 USD"
+        },
+        {
+          "bot": "bot_cand_b",
+          "market_id": "2664318",
+          "option": "31°C",
+          "price": 0.06,
+          "invested": 5.0,
+          "prob_ia": 36.8,
+          "pred_ia_temp": 31.66,
+          "pred_sat_temp": 30.8,
+          "ia_bias_correction": 0.86,
+          "sigma": 0.58,
+          "validation_mae_9d": 0.41,
+          "validation_acc_9d": 66.7,
+          "result": "-5.00 USD"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-26",
+      "city": "London",
+      "question": "Highest temperature in London on June 26?",
+      "winner_option": "36°C",
+      "bets": [
+        {
+          "bot": "bot_v1",
+          "market_id": "2664239",
+          "option": "32°C or below",
+          "price": 0.07,
+          "invested": 10.0,
+          "prob_ia": 100.0,
+          "pred_ia_temp": 29.38,
+          "pred_sat_temp": 29.6,
+          "ia_bias_correction": -0.22,
+          "sigma": 0.41,
+          "validation_mae_9d": 0.68,
+          "validation_acc_9d": 66.7,
+          "result": "-10.00 USD"
+        },
+        {
+          "bot": "bot_cand_a",
+          "market_id": "2664239",
+          "option": "32°C or below",
+          "price": 0.07,
+          "invested": 10.0,
+          "prob_ia": 100.0,
+          "pred_ia_temp": 29.3,
+          "pred_sat_temp": 29.6,
+          "ia_bias_correction": -0.3,
+          "sigma": 0.4,
+          "validation_mae_9d": 0.66,
+          "validation_acc_9d": 55.6,
+          "result": "-10.00 USD"
+        },
+        {
+          "bot": "bot_cand_b",
+          "market_id": "2664239",
+          "option": "32°C or below",
+          "price": 0.07,
+          "invested": 10.0,
+          "prob_ia": 100.0,
+          "pred_ia_temp": 29.2,
+          "pred_sat_temp": 29.6,
+          "ia_bias_correction": -0.4,
+          "sigma": 0.43,
+          "validation_mae_9d": 0.67,
+          "validation_acc_9d": 55.6,
+          "result": "-10.00 USD"
+        }
+      ]
     }
   ],
   "history": [
@@ -347,9 +348,9 @@
     },
     {
       "date": "2026-06-26",
-      "bot_v1_balance": 100.0,
-      "bot_cand_a_balance": 100.0,
-      "bot_cand_b_balance": 100.0
+      "bot_v1_balance": 80.0,
+      "bot_cand_a_balance": 80.0,
+      "bot_cand_b_balance": 80.0
     }
   ]
 }
